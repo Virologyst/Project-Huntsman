@@ -1,0 +1,10 @@
+# PlatformIO build output and downloaded libraries
+.pio/
+
+# CLion / JetBrains
+.idea/
+cmake-build-*/
+
+# OS
+.DS_Store
+Thumbs.db
