@@ -38,13 +38,14 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"BR",  'X', 1,  2,  977, 2500, 1831, -1},  // 200/550/375
 };
 
-// Calibration stored in flash (leg/type/board/channel stay fixed in code)
+// Per-joint calibration stored in flash (leg/type stay fixed in code)
 struct Cal {
+    uint8_t board, channel;
     int16_t minUs, maxUs, neutralUs;
     int8_t dir;
 } __attribute__((packed));
 
-constexpr uint8_t CAL_VERSION = 1;
+constexpr uint8_t CAL_VERSION = 2;  // v2 added board/channel
 
 }  // namespace
 
@@ -63,6 +64,12 @@ int find(const char *leg, char type) {
     type = toupper(type);
     for (int i = 0; i < COUNT; i++)
         if (!strcasecmp(joints[i].leg, leg) && joints[i].type == type) return i;
+    return -1;
+}
+
+int findByOutput(int board, int ch) {
+    for (int i = 0; i < COUNT; i++)
+        if (joints[i].board == board && joints[i].channel == ch) return i;
     return -1;
 }
 
@@ -99,6 +106,8 @@ bool load() {
     prefs.end();
     if (!ok) return false;
     for (int i = 0; i < COUNT; i++) {
+        joints[i].board = cal[i].board;
+        joints[i].channel = cal[i].channel;
         joints[i].minUs = cal[i].minUs;
         joints[i].maxUs = cal[i].maxUs;
         joints[i].neutralUs = cal[i].neutralUs;
@@ -110,7 +119,8 @@ bool load() {
 void save() {
     Cal cal[COUNT];
     for (int i = 0; i < COUNT; i++)
-        cal[i] = {joints[i].minUs, joints[i].maxUs, joints[i].neutralUs, joints[i].dir};
+        cal[i] = {joints[i].board, joints[i].channel, joints[i].minUs, joints[i].maxUs, joints[i].neutralUs,
+                  joints[i].dir};
     Preferences prefs;
     prefs.begin("huntsman", false);
     prefs.putBytes("joints", cal, sizeof(cal));

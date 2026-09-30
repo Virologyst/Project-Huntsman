@@ -29,7 +29,8 @@ All grounds common.
 |---|---|
 | 8 | I2C SDA (both PCA9685) |
 | 9 | I2C SCL (both PCA9685) |
-| 4 | Planned: PCA9685 OE (both boards) as software kill - not yet confirmed wired / not driven by firmware |
+| 3V3 | PCA9685 VCC (both boards), with GND - on the first two header pins per the user |
+| 4 | Optional future: PCA9685 OE (both boards) as a software kill. **Not wired** - OE floats low on the boards, so outputs are always enabled |
 | 1 or 2 | Planned: battery voltage divider (must be ADC1; ADC2 = GPIO11-20 is unusable with Wi-Fi on) |
 
 Avoid: GPIO 0, 3, 45, 46 (strapping), 19/20 (USB), 35-37 (reserved if octal PSRAM).
@@ -45,8 +46,10 @@ The S3 has no fixed I2C pins - 8/9 are the Arduino-core defaults.
 
 ## Channel map
 
-From the Arduino UNO prototype; verify on the Brain Box during joint mapping.
-Joint letters: assumed K = knee, Y = femur/lift, X = coxa/swing (to confirm).
+From the Arduino UNO prototype. The robot is a **full rebuild**, so this is likely to have changed - verify
+with the harness check (`ident` / `which`, see calibration.md) and correct with `assign`. The live map is in
+ESP32 flash (`map`); update this table from `export` once verified.
+Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
 
 | Leg | Board | K | Y | X | Dir |
 |---|---|---|---|---|---|

@@ -3,11 +3,11 @@
 
 #include <Arduino.h>
 
-// Joint letters carried over from the prototype: 'K', 'Y', 'X'
+// Joint letters: 'K' = knee, 'Y' = lift (femur), 'X' = swing (coxa)
 struct Joint {
     const char *leg;    // "FL", "FML", "BML", "BL", "FR", "FMR", "BMR", "BR"
     char type;          // 'K', 'Y' or 'X'
-    uint8_t board;      // 1 = 0x40, 2 = 0x41
+    uint8_t board;      // 1 = 0x40, 2 = 0x41  (changeable with 'assign', saved to flash)
     uint8_t channel;    // 0-15
     int16_t minUs;      // physical stop / safe limit
     int16_t maxUs;
@@ -24,6 +24,7 @@ extern const char *const LEGS[LEG_COUNT];
 
 bool isLeg(const char *name);
 int find(const char *leg, char type);  // index into joints[], -1 if none
+int findByOutput(int board, int ch);   // joint wired to that output, -1 if none
 
 int position(int i);                   // current pulse in us, 0 = off
 int moveRaw(int i, int us);            // physical pulse, clamped to the joint's min/max; returns pulse sent

@@ -40,6 +40,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
   its stops on power-up. (The prototype drove everything to neutral at boot.)
 - **Calibration lives in ESP32 flash (NVS)**, survives firmware uploads; `export` prints it as C++ so it can
   be committed back into `servo_map.cpp` defaults.
+- **Joint letters: K = knee, Y = lift (femur), X = swing (coxa)** - confirmed by user.
+- **Channel map is not trusted** - full rebuild of the harness, so board/channel per joint is stored in flash
+  and corrected on the robot (`assign`), not only in code. PCA9685 OE is not wired (outputs always enabled).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
 ## Current status
@@ -47,8 +50,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] PlatformIO project builds and uploads (CLion + `pio` CLI)
 - [x] I2C scan: both boards found (0x40, 0x41, plus 0x70 all-call)
 - [x] Calibration console firmware with prototype servo map (limits converted from ticks, UNVERIFIED)
+- [x] Harness tools: `ident` / `which` to identify outputs by scope, `assign` to rewire joints (saved to flash)
 - [ ] Board clock calibration against the scope (`cal`), then `save`
-- [ ] Per-joint mapping: confirm channel, direction, min/max/neutral for all 24 joints
+- [ ] Harness check: every joint connector identified with `ident`/`which`, map corrected with `assign`
+- [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
 - [ ] Commit calibrated map back into `servo_map.cpp` (`export`)
 - [ ] Leg geometry (segment lengths) -> inverse kinematics
 - [ ] Gait (alternating tetrapod first, wave gait for heavy loads)
@@ -56,14 +61,14 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Open questions
 
-- Joint letters from the prototype: assumed **K = knee (tibia), Y = femur (lift), X = coxa (swing)** - confirm.
-- Is the new Brain Box wired to the same channels as the prototype map? (Verify during joint mapping.)
-- Is PCA9685 OE wired to an ESP32 GPIO (planned GPIO4 as a software kill)? Firmware does not drive it yet.
 - Module flash/PSRAM code (N8 / N16R8 ...) - project assumes N8, no PSRAM.
 - Servos are fed 8.5 V; confirm their rated max (the reference 55 kg listing said 7.4 V HV).
 - Signal level is 3.3 V from the PCA boards - confirm the servos respond reliably.
 
 ## Next step
 
-Calibrate each board's oscillator with the scope, then map joints one servo at a time
-(procedure in [docs/calibration.md](docs/calibration.md)).
+1. Calibrate each board's oscillator with the scope (`cal`, `save`).
+2. Harness check with servos unplugged (`ident confirm`, probe each connector, `which`, `assign`, `save`).
+3. Map joints one servo at a time.
+
+Procedures in [docs/calibration.md](docs/calibration.md).

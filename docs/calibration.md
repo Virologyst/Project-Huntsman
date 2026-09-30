@@ -20,6 +20,7 @@ Legs: `FL FML BML BL FR FMR BMR BR`. Joints: `K Y X`.
 | `limp` | Every output off |
 | `setmin FR X [us]` | Set limit (no value = current position). Same for `setmax`, `setneutral` |
 | `setdir FR X -1` | Set direction |
+| `assign FR X 2 11` | Rewire a joint to board 2 channel 11 (warns if another joint already uses it) |
 | `map` | Table of all joints |
 | `export` | Print the map as C++ rows for `DEFAULTS` in `src/servo_map.cpp` |
 
@@ -38,9 +39,16 @@ Joint moves are clamped to the joint's min/max. To explore beyond the current li
 | `freq 50` | Frame rate for both boards |
 | `status` | Clocks, frame rate, active outputs |
 
+### Harness check (servos disconnected)
+
+| Command | Effect |
+|---|---|
+| `ident` / `ident confirm` | Warns, then puts a unique width on all 32 outputs: board 1 = `1000 + 20*ch` us, board 2 = `1600 + 20*ch` us |
+| `which 1180` | Decodes a scope reading: `board 1 ch 9 (map says BL K)` |
+
 ### Settings
 
-`save` writes board clocks and the joint map to ESP32 flash (survives power cycles and firmware uploads).
+`save` writes board clocks and the joint map (including board/channel assignments) to ESP32 flash (survives power cycles and firmware uploads).
 `load` re-reads them. `defaults` restores 25 MHz clocks and the prototype map (not saved until `save`).
 
 ## 1. Board clock calibration (scope)
@@ -54,12 +62,22 @@ until corrected.
 4. Check `p 1 0 1000` and `p 1 0 2000` also read within +/-5 us.
 5. Repeat for board 2, then `save`.
 
-## 2. Joint mapping (one servo at a time)
+## 2. Harness check (servos disconnected, scope only)
+
+The rebuild re-wired the harness, so confirm which output reaches each joint's connector before any servo
+is plugged in. Do the clock calibration first so `which` decodes accurately.
+
+1. **All servos unplugged.** `ident confirm`.
+2. Probe the signal pin of each joint's connector on the chassis. `which <measured width>`.
+3. If the reported board/channel differs from the map: `assign <leg> <joint> <board> <ch>`.
+4. After all 24: `limp`, `map` to review (no duplicates), `save`.
+
+## 3. Joint mapping (one servo at a time)
 
 Do this with the leg free to move (robot on a stand) and a hand on the servo power switch.
 
 1. Plug in one servo. `map` to find its leg/joint.
-2. `FR X neutral` - confirm the **right joint** moves (channel map correct).
+2. `FR X neutral` - confirm the **right joint** moves.
 3. Jog in small steps (`FR X +20`, `+40` ...) and check the direction: + should mean the same physical
    motion as the matching joint on the other side. If not, `setdir FR X -1`.
 4. Find the safe ends: jog toward each end and stop short of any hard stop or collision, then

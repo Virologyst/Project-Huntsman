@@ -140,6 +140,62 @@ void cmdSetDir(char *tok[], int n) {
     Serial.println("  (not saved - type 'save' to keep)");
 }
 
+// assign <leg> <joint> <board> <ch>
+void cmdAssign(char *tok[], int n) {
+    int ch;
+    int b = n > 3 ? atoi(tok[3]) : 0;
+    if (n < 5 || !servos::isLeg(tok[1]) || !pwm::validBoard(b) || !parseChannel(tok[4], ch)) {
+        Serial.println("Usage: assign <leg> <K|Y|X> <1|2> <ch>");
+        return;
+    }
+    int i = servos::find(tok[1], tok[2][0]);
+    if (i < 0) { Serial.println("No such joint (use K, Y or X)"); return; }
+    int other = servos::findByOutput(b, ch);
+    if (other >= 0 && other != i) {
+        Serial.printf("Board %d ch %d is already %s %c - reassign that one too\n", b, ch,
+                      servos::joints[other].leg, servos::joints[other].type);
+    }
+    servos::off(i);  // stop pulses on the old output
+    servos::joints[i].board = b;
+    servos::joints[i].channel = ch;
+    printJoint(i);
+    Serial.println("  (not saved - type 'save' to keep)");
+}
+
+// ---------- harness identification (NO SERVOS CONNECTED) ----------
+
+// Every output gets a unique width: board 1 = 1000 + 20*ch, board 2 = 1600 + 20*ch
+constexpr int IDENT_BASE_US[cfg::BOARD_COUNT] = {1000, 1600};
+constexpr int IDENT_STEP_US = 20;
+
+void cmdIdent(char *tok[], int n) {
+    if (n < 2 || !eq(tok[1], "confirm")) {
+        Serial.println("ident drives ALL 32 outputs to arbitrary positions - servos must be DISCONNECTED.");
+        Serial.println("Type 'ident confirm' to proceed, 'limp' to stop.");
+        return;
+    }
+    for (int b = 1; b <= cfg::BOARD_COUNT; b++)
+        for (int ch = 0; ch < 16; ch++) pwm::setPulse(b, ch, IDENT_BASE_US[b - 1] + ch * IDENT_STEP_US);
+    Serial.println("Ident pattern on: board 1 = 1000 + 20*ch us (1000-1300), board 2 = 1600 + 20*ch us (1600-1900).");
+    Serial.println("Probe a wire, then 'which <measured_us>'. 'limp' when done.");
+}
+
+// which <us> - decode an ident pulse width to board/channel
+void cmdWhich(char *tok[], int n) {
+    if (n < 2) { Serial.println("Usage: which <measured_us>"); return; }
+    float us = atof(tok[1]);
+    for (int b = 1; b <= cfg::BOARD_COUNT; b++) {
+        int ch = lroundf((us - IDENT_BASE_US[b - 1]) / IDENT_STEP_US);
+        if (ch < 0 || ch > 15 || fabsf(us - (IDENT_BASE_US[b - 1] + ch * IDENT_STEP_US)) > 8) continue;
+        int j = servos::findByOutput(b, ch);
+        Serial.printf("%.0f us = board %d ch %d", us, b, ch);
+        if (j >= 0) Serial.printf("  (map says %s %c)\n", servos::joints[j].leg, servos::joints[j].type);
+        else Serial.println("  (not in map)");
+        return;
+    }
+    Serial.println("Not an ident width - is 'ident confirm' running and the board clock calibrated?");
+}
+
 // ---------- board-level commands (bypass joint limits, keep hard limits) ----------
 
 void cmdPulse(char *tok[], int n) {
@@ -238,6 +294,9 @@ void handle(char *cmdLine) {
     else if (eq(c, "limp")) { pwm::allOff(); Serial.println("All outputs off."); }
     else if (eq(c, "setmin") || eq(c, "setmax") || eq(c, "setneutral")) cmdSetLimit(tok, n);
     else if (eq(c, "setdir")) cmdSetDir(tok, n);
+    else if (eq(c, "assign")) cmdAssign(tok, n);
+    else if (eq(c, "ident")) cmdIdent(tok, n);
+    else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
     else if (eq(c, "off")) cmdOff(tok, n);
     else if (eq(c, "sweep")) cmdSweep(tok, n);
@@ -271,7 +330,10 @@ void printHelp() {
         "  all | limp             every joint to neutral / every output off\n"
         "  setmin|setmax|setneutral <leg> <joint> [us]   (no us = current position)\n"
         "  setdir <leg> <joint> <1|-1>\n"
+        "  assign <leg> <joint> <b> <ch>   rewire a joint to another output\n"
         "  map | export           show joint table / print it as C++ for servo_map.cpp\n"
+        "Harness check (SERVOS DISCONNECTED):\n"
+        "  ident confirm          unique pulse on every output;  which <us>  decode a scope reading\n"
         "Boards (1 = 0x40, 2 = 0x41; ignore joint limits):\n"
         "  p <b> <ch> <us>        raw pulse, e.g. p 1 0 1500\n"
         "  off <b> <ch|all>\n"
