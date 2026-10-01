@@ -44,6 +44,7 @@ Joint moves are clamped to the joint's min/max. To explore beyond the current li
 
 | Command | Effect |
 |---|---|
+| `check FL` / `check` | Leg by leg (or all 8 legs): pulses only the mapped output for K, then Y, then X while you probe that wire. `y` = confirmed; `n` = keeps the probe there and locates the real output (as `find`), fixing the map |
 | `find FL K` | Probe FL K's signal wire and answer y/n ("pulses?") 5 times. Confirms or corrects its board/channel and marks it wired. Works with an uncalibrated clock and a coarse scope readout |
 | `find` | Same, but only reports which output the probed wire is on |
 | `ident` / `ident confirm` | Warns, then puts a unique width on all 32 outputs: board 1 = `1000 + 20*ch` us, board 2 = `1600 + 20*ch` us |
@@ -71,11 +72,19 @@ The rebuild re-wired the harness, so confirm which output reaches each joint's c
 is plugged in. `find` only needs the scope to show whether pulses are present, so clock calibration is
 not required first.
 
-1. **All servos unplugged.** Scope ground clip on servo ground, probe on the joint's signal pin.
-2. `find FL K`, answer y/n for each question (first time per boot it asks you to confirm servos are unplugged).
-   It reports `MATCH` or `CHANGED` and updates the map.
-3. Repeat for all 24 joints. `save` as you go.
-4. `map` - all 24 should show `Wired yes` and no duplicate-channel warnings. `save`.
+Wires can't easily be traced inside the chassis, so the check works at each leg's connector, assuming
+the leg's three wires keep their K, Y, X order (confirmed later with servos plugged in).
+
+1. **All servos unplugged.** Scope ground clip on servo ground.
+2. `check FL` (first time per boot it asks you to confirm servos are unplugged).
+3. For each prompt, put the probe on that joint's signal wire at the leg connector and answer:
+   - `y` - pulses present: confirmed.
+   - `n` - keep the probe there and answer the y/n questions; it finds the real output and fixes the map.
+   - `q` - stop.
+4. `save`, then the next leg (`check FML`, ...), or run `check` alone to go through all 8 legs.
+5. `map` - all 24 should show `Wired yes` and no duplicate-channel warnings. `save`.
+
+`find FL K` does step 3's locate on its own for a single wire.
 
 With a calibrated clock and a precise scope readout, `ident confirm` + `which <width>` is a faster alternative.
 

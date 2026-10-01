@@ -52,7 +52,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] Calibration console firmware with prototype servo map (limits converted from ticks, UNVERIFIED)
 - [x] Harness tools: `ident` / `which` to identify outputs by scope, `assign` to rewire joints (saved to flash)
 - [x] `find` (y/n bisection) for harness check - works without clock calibration
-- [ ] Harness check: all 24 joints `Wired yes` via `find`, saved  <- doing first
+- [x] `check <leg>`: leg-by-leg harness check at the leg connector (wires can't be traced in the chassis)
+- [ ] Harness check: all 24 joints `Wired yes` via `check`, saved  <- doing first.
+      So far: user's `find FL K` saved FL K = board 1 ch 2 (prototype had that as BR X) - re-verify with `check FL`
+- [ ] K/Y/X order within each leg connector: assumed unchanged, confirm with servos plugged in
 - [ ] Board clock calibration (`cal` / `calf`), then `save` - deferred: scope readout only gives 2 digits at
       the default timebase (read 1.3 ms for a 1500 us command); zoom in, use cursors, or use `calf`
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
@@ -69,7 +72,7 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Next step
 
-1. Harness check with servos unplugged: `find <leg> <joint>` for all 24, `save`.
+1. Harness check with servos unplugged: `check FL` ... `check BR` (or `check`), `save`.
 2. Calibrate each board's oscillator (`cal` / `calf`, `save`).
 3. Map joints one servo at a time.
 

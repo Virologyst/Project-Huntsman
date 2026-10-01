@@ -206,7 +206,71 @@ void showOutputs(int from, int to) {
     }
 }
 
-// find [leg joint] - probe a connector, answer y/n until its output is known (5 questions)
+constexpr int LOCATE_QUIT = -1;  // user typed q
+constexpr int LOCATE_NONE = -2;  // no pulses on the wire at all
+constexpr int LOCATE_BAD = -3;   // answers didn't add up
+
+bool confirmUnplugged() {
+    if (servosUnplugged) return true;
+    Serial.println("This drives outputs with no limits - every servo must be UNPLUGGED.");
+    if (ask("Are all servos unplugged?") != 'y') { Serial.println("Cancelled."); return false; }
+    servosUnplugged = true;
+    return true;
+}
+
+int outputOf(int joint) { return (servos::joints[joint].board - 1) * 16 + servos::joints[joint].channel; }
+
+// Bisect all outputs with y/n answers while the probe stays on one wire. Returns output index or LOCATE_*.
+int locateOutput() {
+    char a;
+    showOutputs(0, OUTPUT_COUNT);
+    if ((a = ask("All outputs on - do you see pulses?")) != 'y') {
+        pwm::allOff();
+        return a == 'q' ? LOCATE_QUIT : LOCATE_NONE;
+    }
+    int lo = 0, hi = OUTPUT_COUNT;
+    for (int step = 1; hi - lo > 1; step++) {
+        int mid = (lo + hi) / 2;
+        showOutputs(lo, mid);
+        char q[40];
+        snprintf(q, sizeof(q), "Step %d of 5 - pulses?", step);
+        if ((a = ask(q)) == 'q') { pwm::allOff(); return LOCATE_QUIT; }
+        if (a == 'y') hi = mid;
+        else lo = mid;
+    }
+    showOutputs(lo, lo + 1);
+    a = ask("Only that output on now - pulses?");
+    pwm::allOff();
+    if (a == 'q') return LOCATE_QUIT;
+    return a == 'y' ? lo : LOCATE_BAD;
+}
+
+void reportLocateFailure(int r) {
+    if (r == LOCATE_QUIT) Serial.println("Cancelled.");
+    else if (r == LOCATE_NONE) Serial.println("No pulses on that wire - check probe, ground clip and harness.");
+    else Serial.println("Inconsistent answers - try again.");
+}
+
+// Record that joint's wire is on output o; report MATCH / CHANGED
+void recordJointOutput(int joint, int o) {
+    int b = o / 16 + 1, ch = o % 16;
+    Joint &j = servos::joints[joint];
+    if (j.board == b && j.channel == ch) {
+        Serial.printf("MATCH: %s %c is on board %d ch %d.\n", j.leg, j.type, b, ch);
+    } else {
+        Serial.printf("CHANGED: %s %c was board %d ch %d, now board %d ch %d.\n", j.leg, j.type, j.board,
+                      j.channel, b, ch);
+        int other = servos::findByOutput(b, ch);
+        if (other >= 0 && other != joint)
+            Serial.printf("  %s %c also points at this output - check it too.\n", servos::joints[other].leg,
+                          servos::joints[other].type);
+        j.board = b;
+        j.channel = ch;
+    }
+    j.wired = true;
+}
+
+// find [leg joint] - probe any wire, answer y/n until its output is known (5 questions)
 void cmdFind(char *tok[], int n) {
     int joint = -1;
     if (n >= 3) {
@@ -215,62 +279,57 @@ void cmdFind(char *tok[], int n) {
             return;
         }
     }
-    if (!servosUnplugged) {
-        Serial.println("find drives ALL outputs - every servo must be UNPLUGGED.");
-        if (ask("Are all servos unplugged?") != 'y') { Serial.println("Cancelled."); return; }
-        servosUnplugged = true;
-    }
+    if (!confirmUnplugged()) return;
     if (joint >= 0) Serial.printf("Probe the %s %c signal wire.\n", servos::joints[joint].leg, servos::joints[joint].type);
     else Serial.println("Probe the signal wire you want to identify.");
 
-    char a;
-    showOutputs(0, OUTPUT_COUNT);
-    if ((a = ask("All outputs on - do you see pulses?")) != 'y') {
-        pwm::allOff();
-        Serial.println(a == 'q' ? "Cancelled." : "No pulses on that wire - check probe, ground clip and harness.");
-        return;
-    }
+    int o = locateOutput();
+    if (o < 0) { reportLocateFailure(o); return; }
 
-    int lo = 0, hi = OUTPUT_COUNT;
-    for (int step = 1; hi - lo > 1; step++) {
-        int mid = (lo + hi) / 2;
-        showOutputs(lo, mid);
-        char q[40];
-        snprintf(q, sizeof(q), "Step %d of 5 - pulses?", step);
-        if ((a = ask(q)) == 'q') { pwm::allOff(); Serial.println("Cancelled."); return; }
-        if (a == 'y') hi = mid;
-        else lo = mid;
-    }
-
-    int b = lo / 16 + 1, ch = lo % 16;
-    showOutputs(lo, lo + 1);
-    a = ask("Only that output on now - pulses?");
-    pwm::allOff();
-    if (a != 'y') {
-        Serial.println(a == 'q' ? "Cancelled." : "Inconsistent answers - run find again.");
-        return;
-    }
-
-    int mapped = servos::findByOutput(b, ch);
-    Serial.printf("This wire is board %d ch %d", b, ch);
+    int mapped = servos::findByOutput(o / 16 + 1, o % 16);
+    Serial.printf("This wire is board %d ch %d", o / 16 + 1, o % 16);
     if (mapped >= 0) Serial.printf(" (map says %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
     Serial.println(".");
     if (joint < 0) return;
-
-    Joint &j = servos::joints[joint];
-    if (j.board == b && j.channel == ch) {
-        Serial.printf("MATCH: %s %c is where the map says.\n", j.leg, j.type);
-    } else {
-        Serial.printf("CHANGED: %s %c was board %d ch %d, now board %d ch %d.\n", j.leg, j.type, j.board,
-                      j.channel, b, ch);
-        if (mapped >= 0 && mapped != joint)
-            Serial.printf("  %s %c also points at this output - run find on it too.\n",
-                          servos::joints[mapped].leg, servos::joints[mapped].type);
-        j.board = b;
-        j.channel = ch;
-    }
-    j.wired = true;
+    recordJointOutput(joint, o);
     Serial.println("  (not saved - type 'save' to keep)");
+}
+
+// check [leg] - per joint: pulse only the mapped output, user probes that wire. n -> locate it.
+// No leg = all 8 legs in order.
+void cmdCheck(char *tok[], int n) {
+    if (n >= 2 && !servos::isLeg(tok[1])) { Serial.println("Usage: check [<leg>]"); return; }
+    if (!confirmUnplugged()) return;
+
+    int first = 0, last = servos::LEG_COUNT - 1;
+    for (int l = 0; n >= 2 && l < servos::LEG_COUNT; l++)
+        if (eq(servos::LEGS[l], tok[1])) first = last = l;
+
+    for (int l = first; l <= last; l++) {
+        const char *leg = servos::LEGS[l];
+        Serial.printf("\n--- %s ---\n", leg);
+        for (char type : {'K', 'Y', 'X'}) {
+            int i = servos::find(leg, type);
+            Joint &j = servos::joints[i];
+            showOutputs(outputOf(i), outputOf(i) + 1);
+            char q[64];
+            snprintf(q, sizeof(q), "Probe the %s %c wire (board %d ch %d) - pulses?", leg, type, j.board, j.channel);
+            char a = ask(q);
+            if (a == 'q') { pwm::allOff(); Serial.println("Stopped. 'save' to keep what was confirmed."); return; }
+            if (a == 'y') {
+                j.wired = true;
+                Serial.printf("OK: %s %c on board %d ch %d.\n", leg, type, j.board, j.channel);
+                continue;
+            }
+            Serial.printf("Not there. Keep the probe on the %s %c wire - locating it.\n", leg, type);
+            int o = locateOutput();
+            if (o == LOCATE_QUIT) { Serial.println("Stopped. 'save' to keep what was confirmed."); return; }
+            if (o < 0) { reportLocateFailure(o); Serial.printf("%s %c left unconfirmed.\n", leg, type); continue; }
+            recordJointOutput(i, o);
+        }
+    }
+    pwm::allOff();
+    Serial.println("\nDone - type 'map' to review, then 'save'.");
 }
 
 // Every output gets a unique width: board 1 = 1000 + 20*ch, board 2 = 1600 + 20*ch
@@ -421,6 +480,7 @@ void handle(char *cmdLine) {
     else if (eq(c, "setdir")) cmdSetDir(tok, n);
     else if (eq(c, "assign")) cmdAssign(tok, n);
     else if (eq(c, "find")) cmdFind(tok, n);
+    else if (eq(c, "check")) cmdCheck(tok, n);
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
@@ -460,6 +520,7 @@ void printHelp() {
         "  assign <leg> <joint> <b> <ch>   rewire a joint to another output\n"
         "  map | export           show joint table / print it as C++ for servo_map.cpp\n"
         "Harness check (SERVOS UNPLUGGED):\n"
+        "  check FL | check       leg by leg: probe each wire, y/n; n -> locates it and fixes the map\n"
         "  find FL K              probe FL K's wire, answer y/n -> confirms or fixes its board/channel\n"
         "  find                   identify any wire without changing the map\n"
         "  ident confirm          unique pulse on every output;  which <us>  decode a precise scope reading\n"
