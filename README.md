@@ -9,7 +9,8 @@ Firmware for an 8-legged, load-carrying spider robot: ESP32-S3 + 2x PCA9685 driv
 ## Current firmware
 
 A serial **calibration console**: calibrate each PWM board's clock against an oscilloscope, then map and
-tune every leg joint by name (`FR X 1600`, `FML Y+20`, `setmin BL K`, `save`). All outputs start off.
+tune every leg joint by name (`FR X 1600`, `FML Y+20`, `setmin BL K`, `save`). On boot every output is
+driven to 1500 us (centre); `limp` releases them.
 
 ## Build and upload
 

@@ -36,8 +36,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
   oscillator is calibrated against an oscilloscope and stored; joint limits in us then mean the same thing on
   any board.
 - **Board numbering 1/2 kept from the prototype** (1 = 0x40, 2 = 0x41) so the old map transfers directly.
-- **Outputs start OFF at boot** - no pulses until commanded, so unverified limits can't drive a joint into
-  its stops on power-up. (The prototype drove everything to neutral at boot.)
+- **Boot drives all 32 outputs to 1500 us** (centre), 20 ms apart - user's request, for setting servos to
+  centre. Uses raw outputs, not the joint map, so it works before mapping. `cfg::BOOT_PULSE_US = 0` restores
+  boot-with-outputs-off. Note: uncalibrated clock means ~1.3 ms actual on the scope.
 - **Calibration lives in ESP32 flash (NVS)**, survives firmware uploads; `export` prints it as C++ so it can
   be committed back into `servo_map.cpp` defaults.
 - **Joint letters: K = knee, Y = lift (femur), X = swing (coxa)** - confirmed by user.
@@ -53,7 +54,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] Harness tools: `ident` / `which` to identify outputs by scope, `assign` to rewire joints (saved to flash)
 - [x] `find` (y/n bisection) for harness check - works without clock calibration
 - [x] `check <leg>`: leg-by-leg harness check at the leg connector (wires can't be traced in the chassis)
-- [ ] Harness check: all 24 joints `Wired yes` via `check`, saved  <- doing first.
+- [ ] Harness mapping: user is doing it manually - `p <b> <ch> 1500` per channel, probe the leg wires,
+      then `assign <leg> <joint> <b> <ch>` + `save` (4 channels per leg group, one skipped)  <- doing now.
       So far: user's `find FL K` saved FL K = board 1 ch 2 (prototype had that as BR X) - re-verify with `check FL`
 - [ ] K/Y/X order within each leg connector: assumed unchanged, confirm with servos plugged in
 - [ ] Board clock calibration (`cal` / `calf`), then `save` - deferred: scope readout only gives 2 digits at

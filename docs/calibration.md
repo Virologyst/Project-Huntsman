@@ -1,7 +1,11 @@
 # Calibration
 
-The firmware is currently a serial calibration console (115200 baud). Type a command and press Enter;
-the console echoes the line back. Commands are case-insensitive.
+The firmware is currently a serial calibration console (115200 baud). Type a command and press Enter.
+Commands are case-insensitive.
+
+**On boot, all 32 outputs are driven to 1500 us** (one every 20 ms), so any connected servo moves to
+centre. Type `limp` to release them. To boot with outputs off instead, set `BOOT_PULSE_US = 0` in
+`include/config.h`.
 
 ## Commands
 

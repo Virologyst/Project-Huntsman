@@ -18,6 +18,11 @@ constexpr uint8_t BOARD_ADDR[BOARD_COUNT] = {0x40, 0x41};
 constexpr uint32_t DEFAULT_OSC_HZ = 25000000;  // PCA9685 nominal internal clock
 constexpr float DEFAULT_FRAME_HZ = 50.0f;      // standard servo frame rate
 
+// On boot, every output (all 32 channels) is driven to this pulse, paced to avoid a current spike.
+// Set to 0 to boot with all outputs off (servos limp).
+constexpr int BOOT_PULSE_US = 1500;
+constexpr uint16_t BOOT_PACE_MS = 20;
+
 // Absolute pulse limits for any output, regardless of joint calibration
 constexpr int HARD_MIN_US = 400;
 constexpr int HARD_MAX_US = 2600;
