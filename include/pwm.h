@@ -18,6 +18,7 @@ int lastPulse(int board);                  // last pulse commanded on that board
 uint32_t osc(int board);
 void setOsc(int board, uint32_t hz);
 uint32_t calibrate(int board, float measuredUs);  // corrects osc from a scope reading of lastPulse()
+uint32_t calibrateFromFrame(int board, float measuredHz);  // corrects osc from the measured frame rate
 float frameHz();
 void setFrameHz(float hz);
 

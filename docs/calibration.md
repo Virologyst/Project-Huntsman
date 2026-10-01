@@ -34,15 +34,18 @@ Joint moves are clamped to the joint's min/max. To explore beyond the current li
 | `p 1 0 1500` | Raw pulse on board 1 (0x40), channel 0 |
 | `off 1 all`, `off 2 5` | Stop pulses |
 | `sweep 1 0 1000 2000 100 1000` | Step 1000 -> 2000 us in 100 us steps, 1 s each; any key aborts |
-| `cal 1 1523` | Correct board 1 clock from the scope reading of the last pulse |
+| `cal 1 1523` / `cal 1 1.523` | Correct board 1 clock from the scope's pulse width (us or ms) |
+| `calf 1 54.17` | Correct board 1 clock from the scope's frequency reading (more digits on most scopes) |
 | `osc 1 26500000` | Set board clock directly |
 | `freq 50` | Frame rate for both boards |
 | `status` | Clocks, frame rate, active outputs |
 
-### Harness check (servos disconnected)
+### Harness check (servos unplugged)
 
 | Command | Effect |
 |---|---|
+| `find FL K` | Probe FL K's signal wire and answer y/n ("pulses?") 5 times. Confirms or corrects its board/channel and marks it wired. Works with an uncalibrated clock and a coarse scope readout |
+| `find` | Same, but only reports which output the probed wire is on |
 | `ident` / `ident confirm` | Warns, then puts a unique width on all 32 outputs: board 1 = `1000 + 20*ch` us, board 2 = `1600 + 20*ch` us |
 | `which 1180` | Decodes a scope reading: `board 1 ch 9 (map says BL K)` |
 
@@ -65,12 +68,16 @@ until corrected.
 ## 2. Harness check (servos disconnected, scope only)
 
 The rebuild re-wired the harness, so confirm which output reaches each joint's connector before any servo
-is plugged in. Do the clock calibration first so `which` decodes accurately.
+is plugged in. `find` only needs the scope to show whether pulses are present, so clock calibration is
+not required first.
 
-1. **All servos unplugged.** `ident confirm`.
-2. Probe the signal pin of each joint's connector on the chassis. `which <measured width>`.
-3. If the reported board/channel differs from the map: `assign <leg> <joint> <board> <ch>`.
-4. After all 24: `limp`, `map` to review (no duplicates), `save`.
+1. **All servos unplugged.** Scope ground clip on servo ground, probe on the joint's signal pin.
+2. `find FL K`, answer y/n for each question (first time per boot it asks you to confirm servos are unplugged).
+   It reports `MATCH` or `CHANGED` and updates the map.
+3. Repeat for all 24 joints. `save` as you go.
+4. `map` - all 24 should show `Wired yes` and no duplicate-channel warnings. `save`.
+
+With a calibrated clock and a precise scope readout, `ident confirm` + `which <width>` is a faster alternative.
 
 ## 3. Joint mapping (one servo at a time)
 

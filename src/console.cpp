@@ -14,6 +14,12 @@ size_t lineLen = 0;
 
 bool eq(const char *a, const char *b) { return a && !strcasecmp(a, b); }
 
+// Scope readings may be typed in us (1534) or ms (1.534)
+float parseMeasuredUs(const char *s) {
+    float v = atof(s);
+    return v < 10.0f ? v * 1000.0f : v;
+}
+
 int tokenize(char *s, char *tok[], int max) {
     int n = 0;
     for (char *t = strtok(s, " \t"); t && n < max; t = strtok(nullptr, " \t")) tok[n++] = t;
@@ -158,11 +164,114 @@ void cmdAssign(char *tok[], int n) {
     servos::off(i);  // stop pulses on the old output
     servos::joints[i].board = b;
     servos::joints[i].channel = ch;
+    servos::joints[i].wired = false;  // manual assignment is unconfirmed until 'find'
     printJoint(i);
     Serial.println("  (not saved - type 'save' to keep)");
 }
 
 // ---------- harness identification (NO SERVOS CONNECTED) ----------
+
+constexpr int OUTPUT_COUNT = cfg::BOARD_COUNT * 16;  // output o = board (o / 16) + 1, channel o % 16
+constexpr int FIND_PULSE_US = 1500;
+bool servosUnplugged = false;  // asked once per boot
+
+// Blocks until a y/n line arrives. Returns 'y', 'n' or 'q' (quit).
+char ask(const char *question) {
+    while (true) {
+        Serial.printf("%s (y/n, q = quit): ", question);
+        char buf[16];
+        size_t len = 0;
+        while (true) {
+            if (!Serial.available()) { delay(5); continue; }
+            char c = Serial.read();
+            if (c == '\r' || c == '\n') {
+                if (len) break;
+                continue;
+            }
+            if (len < sizeof(buf) - 1) buf[len++] = c;
+        }
+        buf[len] = 0;
+        char a = tolower(buf[0]);
+        Serial.println();
+        if (a == 'y' || a == 'n' || a == 'q') return a;
+    }
+}
+
+// Pulses on outputs [from, to), off everywhere else
+void showOutputs(int from, int to) {
+    for (int o = 0; o < OUTPUT_COUNT; o++) {
+        int b = o / 16 + 1, ch = o % 16;
+        if (o >= from && o < to) pwm::setPulse(b, ch, FIND_PULSE_US);
+        else pwm::setOff(b, ch);
+    }
+}
+
+// find [leg joint] - probe a connector, answer y/n until its output is known (5 questions)
+void cmdFind(char *tok[], int n) {
+    int joint = -1;
+    if (n >= 3) {
+        if (!servos::isLeg(tok[1]) || (joint = servos::find(tok[1], tok[2][0])) < 0) {
+            Serial.println("Usage: find [<leg> <K|Y|X>]");
+            return;
+        }
+    }
+    if (!servosUnplugged) {
+        Serial.println("find drives ALL outputs - every servo must be UNPLUGGED.");
+        if (ask("Are all servos unplugged?") != 'y') { Serial.println("Cancelled."); return; }
+        servosUnplugged = true;
+    }
+    if (joint >= 0) Serial.printf("Probe the %s %c signal wire.\n", servos::joints[joint].leg, servos::joints[joint].type);
+    else Serial.println("Probe the signal wire you want to identify.");
+
+    char a;
+    showOutputs(0, OUTPUT_COUNT);
+    if ((a = ask("All outputs on - do you see pulses?")) != 'y') {
+        pwm::allOff();
+        Serial.println(a == 'q' ? "Cancelled." : "No pulses on that wire - check probe, ground clip and harness.");
+        return;
+    }
+
+    int lo = 0, hi = OUTPUT_COUNT;
+    for (int step = 1; hi - lo > 1; step++) {
+        int mid = (lo + hi) / 2;
+        showOutputs(lo, mid);
+        char q[40];
+        snprintf(q, sizeof(q), "Step %d of 5 - pulses?", step);
+        if ((a = ask(q)) == 'q') { pwm::allOff(); Serial.println("Cancelled."); return; }
+        if (a == 'y') hi = mid;
+        else lo = mid;
+    }
+
+    int b = lo / 16 + 1, ch = lo % 16;
+    showOutputs(lo, lo + 1);
+    a = ask("Only that output on now - pulses?");
+    pwm::allOff();
+    if (a != 'y') {
+        Serial.println(a == 'q' ? "Cancelled." : "Inconsistent answers - run find again.");
+        return;
+    }
+
+    int mapped = servos::findByOutput(b, ch);
+    Serial.printf("This wire is board %d ch %d", b, ch);
+    if (mapped >= 0) Serial.printf(" (map says %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
+    Serial.println(".");
+    if (joint < 0) return;
+
+    Joint &j = servos::joints[joint];
+    if (j.board == b && j.channel == ch) {
+        Serial.printf("MATCH: %s %c is where the map says.\n", j.leg, j.type);
+    } else {
+        Serial.printf("CHANGED: %s %c was board %d ch %d, now board %d ch %d.\n", j.leg, j.type, j.board,
+                      j.channel, b, ch);
+        if (mapped >= 0 && mapped != joint)
+            Serial.printf("  %s %c also points at this output - run find on it too.\n",
+                          servos::joints[mapped].leg, servos::joints[mapped].type);
+        j.board = b;
+        j.channel = ch;
+    }
+    j.wired = true;
+    Serial.println("  (not saved - type 'save' to keep)");
+}
 
 // Every output gets a unique width: board 1 = 1000 + 20*ch, board 2 = 1600 + 20*ch
 constexpr int IDENT_BASE_US[cfg::BOARD_COUNT] = {1000, 1600};
@@ -183,7 +292,7 @@ void cmdIdent(char *tok[], int n) {
 // which <us> - decode an ident pulse width to board/channel
 void cmdWhich(char *tok[], int n) {
     if (n < 2) { Serial.println("Usage: which <measured_us>"); return; }
-    float us = atof(tok[1]);
+    float us = parseMeasuredUs(tok[1]);
     for (int b = 1; b <= cfg::BOARD_COUNT; b++) {
         int ch = lroundf((us - IDENT_BASE_US[b - 1]) / IDENT_STEP_US);
         if (ch < 0 || ch > 15 || fabsf(us - (IDENT_BASE_US[b - 1] + ch * IDENT_STEP_US)) > 8) continue;
@@ -251,7 +360,7 @@ void cmdSweep(char *tok[], int n) {
 void cmdCal(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0;
     if (n < 3 || !pwm::validBoard(b)) { Serial.println("Usage: cal <1|2> <measured_us>"); return; }
-    float measured = atof(tok[2]);
+    float measured = parseMeasuredUs(tok[2]);
     int commanded = pwm::lastPulse(b);
     if (!commanded) { Serial.println("Output a pulse on that board first (p ...)"); return; }
     if (measured < commanded * 0.8f || measured > commanded * 1.2f) {
@@ -262,6 +371,22 @@ void cmdCal(char *tok[], int n) {
     uint32_t now = pwm::calibrate(b, measured);
     Serial.printf("Board %d osc %lu -> %lu Hz. Re-measure; repeat until it reads %d us, then 'save'.\n", b,
                   (unsigned long)old, (unsigned long)now, commanded);
+}
+
+// calf <b> <measured_hz> - calibrate from the scope's frequency reading (needs a pulse running)
+void cmdCalFrame(char *tok[], int n) {
+    int b = n > 1 ? atoi(tok[1]) : 0;
+    if (n < 3 || !pwm::validBoard(b)) { Serial.println("Usage: calf <1|2> <measured_hz>"); return; }
+    float hz = atof(tok[2]);
+    if (!pwm::lastPulse(b)) { Serial.println("Output a pulse on that board first (p ...)"); return; }
+    if (hz < pwm::frameHz() * 0.8f || hz > pwm::frameHz() * 1.2f) {
+        Serial.println("Measured frequency is >20% off the frame rate - check the reading");
+        return;
+    }
+    uint32_t old = pwm::osc(b);
+    uint32_t now = pwm::calibrateFromFrame(b, hz);
+    Serial.printf("Board %d osc %lu -> %lu Hz. Re-measure; frequency should now read %.1f Hz, then 'save'.\n", b,
+                  (unsigned long)old, (unsigned long)now, pwm::frameHz());
 }
 
 void cmdOsc(char *tok[], int n) {
@@ -295,12 +420,14 @@ void handle(char *cmdLine) {
     else if (eq(c, "setmin") || eq(c, "setmax") || eq(c, "setneutral")) cmdSetLimit(tok, n);
     else if (eq(c, "setdir")) cmdSetDir(tok, n);
     else if (eq(c, "assign")) cmdAssign(tok, n);
+    else if (eq(c, "find")) cmdFind(tok, n);
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
     else if (eq(c, "off")) cmdOff(tok, n);
     else if (eq(c, "sweep")) cmdSweep(tok, n);
     else if (eq(c, "cal")) cmdCal(tok, n);
+    else if (eq(c, "calf")) cmdCalFrame(tok, n);
     else if (eq(c, "osc")) cmdOsc(tok, n);
     else if (eq(c, "freq")) cmdFreq(tok, n);
     else if (eq(c, "save")) { pwm::saveSettings(); servos::save(); Serial.println("Clocks and joint map saved to flash."); }
@@ -332,13 +459,16 @@ void printHelp() {
         "  setdir <leg> <joint> <1|-1>\n"
         "  assign <leg> <joint> <b> <ch>   rewire a joint to another output\n"
         "  map | export           show joint table / print it as C++ for servo_map.cpp\n"
-        "Harness check (SERVOS DISCONNECTED):\n"
-        "  ident confirm          unique pulse on every output;  which <us>  decode a scope reading\n"
+        "Harness check (SERVOS UNPLUGGED):\n"
+        "  find FL K              probe FL K's wire, answer y/n -> confirms or fixes its board/channel\n"
+        "  find                   identify any wire without changing the map\n"
+        "  ident confirm          unique pulse on every output;  which <us>  decode a precise scope reading\n"
         "Boards (1 = 0x40, 2 = 0x41; ignore joint limits):\n"
         "  p <b> <ch> <us>        raw pulse, e.g. p 1 0 1500\n"
         "  off <b> <ch|all>\n"
         "  sweep <b> <ch> <from> <to> <step> <ms>   (any key aborts)\n"
-        "  cal <b> <measured_us>  correct board clock from scope reading of last pulse\n"
+        "  cal <b> <measured>     correct board clock from scope pulse width (us, or ms e.g. 1.534)\n"
+        "  calf <b> <hz>          correct board clock from scope frequency reading\n"
         "  osc <b> <hz> | freq <hz> | status\n"
         "Settings: save | load | defaults"));
 }
@@ -349,7 +479,7 @@ void poll() {
         if (c == '\r' || c == '\n') {
             if (lineLen) {
                 line[lineLen] = 0;
-                Serial.println(line);
+                Serial.println();  // the serial monitor echoes typed text locally
                 handle(line);
                 lineLen = 0;
                 Serial.print("> ");

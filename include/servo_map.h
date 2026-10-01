@@ -13,6 +13,7 @@ struct Joint {
     int16_t maxUs;
     int16_t neutralUs;  // rest position
     int8_t dir;         // +1 / -1 so offsets mean the same motion on both sides
+    bool wired;         // board/channel confirmed on the harness with 'find'
 };
 
 namespace servos {

@@ -107,6 +107,15 @@ uint32_t calibrate(int board, float measuredUs) {
     return oscHz[i];
 }
 
+uint32_t calibrateFromFrame(int board, float measuredHz) {
+    // Frame rate = osc / (4096 * (prescale + 1)), so osc = measured * 4096 * (prescale + 1)
+    int i = idx(board);
+    uint8_t prescale = drivers[i].readPrescale();
+    oscHz[i] = (uint32_t)((double)measuredHz * 4096.0 * (prescale + 1) + 0.5);
+    apply(i);
+    return oscHz[i];
+}
+
 float frameHz() { return frame; }
 
 void setFrameHz(float hz) {

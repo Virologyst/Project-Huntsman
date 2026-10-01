@@ -43,9 +43,10 @@ struct Cal {
     uint8_t board, channel;
     int16_t minUs, maxUs, neutralUs;
     int8_t dir;
+    uint8_t wired;
 } __attribute__((packed));
 
-constexpr uint8_t CAL_VERSION = 2;  // v2 added board/channel
+constexpr uint8_t CAL_VERSION = 3;  // v2 added board/channel, v3 added wired
 
 }  // namespace
 
@@ -112,6 +113,7 @@ bool load() {
         joints[i].maxUs = cal[i].maxUs;
         joints[i].neutralUs = cal[i].neutralUs;
         joints[i].dir = cal[i].dir;
+        joints[i].wired = cal[i].wired;
     }
     return true;
 }
@@ -120,7 +122,7 @@ void save() {
     Cal cal[COUNT];
     for (int i = 0; i < COUNT; i++)
         cal[i] = {joints[i].board, joints[i].channel, joints[i].minUs, joints[i].maxUs, joints[i].neutralUs,
-                  joints[i].dir};
+                  joints[i].dir, joints[i].wired};
     Preferences prefs;
     prefs.begin("huntsman", false);
     prefs.putBytes("joints", cal, sizeof(cal));
@@ -129,15 +131,23 @@ void save() {
 }
 
 void printTable() {
-    Serial.println("\n Leg  J  Brd Ch   Min  Neut   Max  Dir    Now");
+    Serial.println("\n Leg  J  Brd Ch  Wired   Min  Neut   Max  Dir    Now");
+    int wired = 0;
     for (int i = 0; i < COUNT; i++) {
         const Joint &j = joints[i];
         int now = position(i);
-        Serial.printf(" %-4s %c   %d  %2d  %4d  %4d  %4d  %+d   ", j.leg, j.type, j.board, j.channel,
-                      j.minUs, j.neutralUs, j.maxUs, j.dir);
+        wired += j.wired;
+        Serial.printf(" %-4s %c   %d  %2d  %-5s  %4d  %4d  %4d  %+d   ", j.leg, j.type, j.board, j.channel,
+                      j.wired ? "yes" : "-", j.minUs, j.neutralUs, j.maxUs, j.dir);
         if (now) Serial.printf("%4d\n", now);
         else Serial.println(" off");
     }
+    Serial.printf("%d of %d joints confirmed on the harness\n", wired, COUNT);
+    for (int i = 0; i < COUNT; i++)
+        for (int k = i + 1; k < COUNT; k++)
+            if (joints[i].board == joints[k].board && joints[i].channel == joints[k].channel)
+                Serial.printf("WARNING: %s %c and %s %c share board %d ch %d\n", joints[i].leg, joints[i].type,
+                              joints[k].leg, joints[k].type, joints[i].board, joints[i].channel);
 }
 
 void printExport() {

@@ -51,8 +51,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] I2C scan: both boards found (0x40, 0x41, plus 0x70 all-call)
 - [x] Calibration console firmware with prototype servo map (limits converted from ticks, UNVERIFIED)
 - [x] Harness tools: `ident` / `which` to identify outputs by scope, `assign` to rewire joints (saved to flash)
-- [ ] Board clock calibration against the scope (`cal`), then `save`
-- [ ] Harness check: every joint connector identified with `ident`/`which`, map corrected with `assign`
+- [x] `find` (y/n bisection) for harness check - works without clock calibration
+- [ ] Harness check: all 24 joints `Wired yes` via `find`, saved  <- doing first
+- [ ] Board clock calibration (`cal` / `calf`), then `save` - deferred: scope readout only gives 2 digits at
+      the default timebase (read 1.3 ms for a 1500 us command); zoom in, use cursors, or use `calf`
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
 - [ ] Commit calibrated map back into `servo_map.cpp` (`export`)
 - [ ] Leg geometry (segment lengths) -> inverse kinematics
@@ -67,8 +69,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Next step
 
-1. Calibrate each board's oscillator with the scope (`cal`, `save`).
-2. Harness check with servos unplugged (`ident confirm`, probe each connector, `which`, `assign`, `save`).
+1. Harness check with servos unplugged: `find <leg> <joint>` for all 24, `save`.
+2. Calibrate each board's oscillator (`cal` / `calf`, `save`).
 3. Map joints one servo at a time.
 
 Procedures in [docs/calibration.md](docs/calibration.md).
