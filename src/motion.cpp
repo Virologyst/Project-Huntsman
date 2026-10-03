@@ -59,7 +59,7 @@ struct Pose {
     void add(const char *leg, char type, int offsetUs) {
         int i = servos::find(leg, type);
         joints[n] = i;
-        targets[n] = cfg::STAND_CENTER_US + offsetUs * servos::joints[i].dir;
+        targets[n] = servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir;
         n++;
     }
     void run(uint16_t ms) { motion::ramp(joints, targets, n, ms, false); }  // a step always completes
@@ -135,7 +135,7 @@ bool rampType(char type, int offsetUs, uint16_t ms) {
     for (int i = 0; i < servos::COUNT; i++) {
         if (servos::joints[i].type != type) continue;
         joints[n] = i;
-        targets[n] = cfg::STAND_CENTER_US + offsetUs * servos::joints[i].dir;
+        targets[n] = servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir;
         n++;
     }
     return ramp(joints, targets, n, ms);
@@ -145,7 +145,7 @@ bool rampAllCenter(uint16_t ms) {
     int joints[servos::COUNT], targets[servos::COUNT];
     for (int i = 0; i < servos::COUNT; i++) {
         joints[i] = i;
-        targets[i] = cfg::STAND_CENTER_US;
+        targets[i] = servos::joints[i].neutralUs;
     }
     return ramp(joints, targets, servos::COUNT, ms);
 }
@@ -166,7 +166,7 @@ bool isStanding() {
     for (int i = 0; i < servos::COUNT; i++) {
         const Joint &j = servos::joints[i];
         int offset = j.type == 'Y' ? cfg::STAND_PUSH_US : j.type == 'K' ? cfg::STAND_TUCK_US : 0;
-        if (j.type != 'X' && servos::position(i) != cfg::STAND_CENTER_US + offset * j.dir) return false;
+        if (j.type != 'X' && servos::position(i) != j.neutralUs + offset * j.dir) return false;
     }
     return true;
 }

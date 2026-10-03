@@ -13,6 +13,18 @@ WiFiServer server(cfg::CONSOLE_PORT);
 WiFiClient consoleClient;
 bool servicesStarted = false;  // OTA, mDNS and console server start on the first connection
 bool reported = false;
+int lastStatus = -1;
+
+const char *statusText(wl_status_t s) {
+    switch (s) {
+        case WL_NO_SSID_AVAIL: return "network not found (2.4 GHz only - check SSID and antenna)";
+        case WL_CONNECT_FAILED: return "connection failed (check password)";
+        case WL_CONNECTION_LOST: return "connection lost - retrying";
+        case WL_DISCONNECTED: return "disconnected - retrying";
+        case WL_IDLE_STATUS: return "connecting";
+        default: return "status changed";
+    }
+}
 
 }  // namespace
 
@@ -27,6 +39,7 @@ void begin() {
     WiFi.setHostname(cfg::HOSTNAME);
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Term.printf("Wi-Fi: connecting to %s\n", WIFI_SSID);
 
     ArduinoOTA.setHostname(cfg::HOSTNAME);
     ArduinoOTA.onStart([] {
@@ -41,10 +54,14 @@ void begin() {
 }
 
 void handle() {
-    if (!connected()) {
+    wl_status_t status = WiFi.status();
+    if (status != WL_CONNECTED) {
+        if (status != lastStatus) Term.printf("Wi-Fi: %s\n", statusText(status));
+        lastStatus = status;
         reported = false;
         return;
     }
+    lastStatus = status;
     if (!servicesStarted) {
         ArduinoOTA.begin();  // also starts mDNS as HOSTNAME.local
         server.begin();

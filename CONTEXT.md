@@ -46,6 +46,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
   and corrected on the robot (`assign`), not only in code. PCA9685 OE is not wired (outputs always enabled).
 - **Wi-Fi console mirrors USB** (`Term` in term.h) so the robot can be driven untethered; OTA sits the
   robot down before flashing. No OTA password - trusted home network (user's call).
+- **Motion is relative to each joint's neutral**, which doubles as its trim (`setneutral`). All 1500
+  except FML X = 1600 (user: FML needed its swing centre ~100 forward). Map version 4 reset flash to the
+  code defaults (same board/channel/dir as the wiggle run).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
 ## Current status
@@ -88,8 +91,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 1. First walk test: legs in the air on the stand (`walk 2`), then on the floor; tune `WALK_*`.
 2. Leg segment lengths (coxa, femur, tibia) -> IK -> straight-line foot paths, body height/tilt control.
-3. Upload the Wi-Fi firmware over USB once (also carries the untested walking code), confirm
-   huntsman.local, then test OTA and the network console. Antenna fitted? (unconfirmed)
+3. Wi-Fi: first upload (2026-10-03, via native USB COM5) - robot did NOT appear on the network
+   (huntsman.local unresolved, no port 23 on 192.168.0.0/24). Added status messages; read them on the
+   UART port (COM4). Check: antenna fitted, VNet has 2.4 GHz.
 - Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
 
 Procedures in [docs/calibration.md](docs/calibration.md) and [docs/motion.md](docs/motion.md).

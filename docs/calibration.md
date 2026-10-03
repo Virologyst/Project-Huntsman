@@ -22,7 +22,8 @@ Legs: `FL FML BML BL FR FMR BMR BR`. Joints: `K Y X`.
 | `FR`, `FR X` | Show leg / joint settings and current pulse |
 | `all` (or `neutral`) | Every joint to neutral, 20 ms apart to avoid a current spike |
 | `limp` | Every output off |
-| `setmin FR X [us]` | Set limit (no value = current position). Same for `setmax`, `setneutral` |
+| `setmin FR X [us]` | Set limit (no value = current position). Same for `setmax` |
+| `setneutral FR X [us]` | Set the joint's centre/trim - every motion (stand, walk) is offset from it |
 | `setdir FR X -1` | Set direction |
 | `assign FR X 2 11` | Rewire a joint to board 2 channel 11 (warns if another joint already uses it) |
 | `map` | Table of all joints |

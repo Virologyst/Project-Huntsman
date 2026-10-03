@@ -10,34 +10,34 @@ namespace {
 
 // Default map. Board/channel and dir verified on the rebuilt robot with 'wiggle' (2026-10-03):
 // board 1 = left legs, board 2 = right legs. dir convention: + = lift up, knee up, swing forward.
-// min/max/neutral are still the Arduino UNO prototype values (ticks x 4.883 us, clamped to 500-2500) and
-// are UNVERIFIED - set them per joint (docs/calibration.md).
+// neutral = centre for all motion (1500, FML X trimmed forward 2026-10-03). min/max are still the
+// Arduino UNO prototype values (ticks x 4.883 us, clamped to 500-2500) - UNVERIFIED.
 const Joint DEFAULTS[servos::COUNT] = {
-    // leg    J   brd ch   min   max  neutral dir
-    {"FL",  'K', 1,  2,  732, 2500,  854, -1},
-    {"FL",  'Y', 1,  1,  732, 2500, 1831, -1},
-    {"FL",  'X', 1,  0,  977, 2500, 1709, +1},
-    {"FML", 'K', 1,  5,  732, 2500,  854, +1},
-    {"FML", 'Y', 1,  3,  732, 2500, 1831, +1},
-    {"FML", 'X', 1,  4,  977, 2500, 1831, +1},
-    {"BML", 'K', 1, 11,  732, 2500, 2500, -1},
-    {"BML", 'Y', 1,  9,  732, 2500, 1831, -1},
-    {"BML", 'X', 1, 10,  977, 2500, 1831, +1},
-    {"BL",  'K', 1, 12,  732, 2500, 2500, +1},
-    {"BL",  'Y', 1, 14,  732, 2500, 1831, +1},
-    {"BL",  'X', 1, 13,  977, 2500, 1831, +1},
-    {"FR",  'K', 2, 13,  732, 2500, 2500, +1},
-    {"FR",  'Y', 2, 15,  732, 2500, 1831, +1},
-    {"FR",  'X', 2, 14,  977, 2500, 1709, -1},
-    {"FMR", 'K', 2, 10,  732, 2500, 2500, -1},
-    {"FMR", 'Y', 2,  9,  732, 2500, 1831, -1},
-    {"FMR", 'X', 2, 11,  977, 2500, 1953, -1},
-    {"BMR", 'K', 2,  4,  732, 2500,  854, +1},
-    {"BMR", 'Y', 2,  6,  732, 2500, 1831, +1},
-    {"BMR", 'X', 2,  5,  977, 2500, 1831, -1},
-    {"BR",  'K', 2,  1,  732, 2500,  854, -1},
-    {"BR",  'Y', 2,  0,  732, 2500, 1831, -1},
-    {"BR",  'X', 2,  2,  977, 2500, 1831, -1},
+    // leg    J   brd ch   min   max  neutral dir  wired
+    {"FL",  'K', 1,  2,  732, 2500, 1500, -1, true},
+    {"FL",  'Y', 1,  1,  732, 2500, 1500, -1, true},
+    {"FL",  'X', 1,  0,  977, 2500, 1500, +1, true},
+    {"FML", 'K', 1,  5,  732, 2500, 1500, +1, true},
+    {"FML", 'Y', 1,  3,  732, 2500, 1500, +1, true},
+    {"FML", 'X', 1,  4,  977, 2500, 1600, +1, true},  // trimmed 100 us forward
+    {"BML", 'K', 1, 11,  732, 2500, 1500, -1, true},
+    {"BML", 'Y', 1,  9,  732, 2500, 1500, -1, true},
+    {"BML", 'X', 1, 10,  977, 2500, 1500, +1, true},
+    {"BL",  'K', 1, 12,  732, 2500, 1500, +1, true},
+    {"BL",  'Y', 1, 14,  732, 2500, 1500, +1, true},
+    {"BL",  'X', 1, 13,  977, 2500, 1500, +1, true},
+    {"FR",  'K', 2, 13,  732, 2500, 1500, +1, true},
+    {"FR",  'Y', 2, 15,  732, 2500, 1500, +1, true},
+    {"FR",  'X', 2, 14,  977, 2500, 1500, -1, true},
+    {"FMR", 'K', 2, 10,  732, 2500, 1500, -1, true},
+    {"FMR", 'Y', 2,  9,  732, 2500, 1500, -1, true},
+    {"FMR", 'X', 2, 11,  977, 2500, 1500, -1, true},
+    {"BMR", 'K', 2,  4,  732, 2500, 1500, +1, true},
+    {"BMR", 'Y', 2,  6,  732, 2500, 1500, +1, true},
+    {"BMR", 'X', 2,  5,  977, 2500, 1500, -1, true},
+    {"BR",  'K', 2,  1,  732, 2500, 1500, -1, true},
+    {"BR",  'Y', 2,  0,  732, 2500, 1500, -1, true},
+    {"BR",  'X', 2,  2,  977, 2500, 1500, -1, true},
 };
 
 // Per-joint calibration stored in flash (leg/type stay fixed in code)
@@ -48,7 +48,7 @@ struct Cal {
     uint8_t wired;
 } __attribute__((packed));
 
-constexpr uint8_t CAL_VERSION = 3;  // v2 added board/channel, v3 added wired
+constexpr uint8_t CAL_VERSION = 4;  // v2 board/channel, v3 wired, v4 = reset to wiggle-verified defaults
 
 }  // namespace
 

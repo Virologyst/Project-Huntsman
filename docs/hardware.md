@@ -48,7 +48,7 @@ The S3 has no fixed I2C pins - 8/9 are the Arduino-core defaults.
 
 Verified on the rebuilt robot with `wiggle` (2026-10-03); matches `DEFAULTS` in `src/servo_map.cpp`.
 The live map is in ESP32 flash (`map`). Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
-Dir: + = lift up, knee up, swing forward.
+Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FML X = 1600.
 
 | Leg | Board | K (ch / dir) | Y (ch / dir) | X (ch / dir) |
 |---|---|---|---|---|

@@ -5,6 +5,7 @@
 #include "config.h"
 #include "term.h"
 #include "motion.h"
+#include "net.h"
 #include "pwm.h"
 #include "servo_map.h"
 
@@ -600,7 +601,13 @@ void handle(char *cmdLine) {
     const char *c = tok[0];
 
     if (eq(c, "help") || eq(c, "?")) console::printHelp();
-    else if (eq(c, "status")) printStatus();
+    else if (eq(c, "status")) {
+        printStatus();
+        if (net::connected())
+            Term.printf("Wi-Fi: %s.local (%s)\n", cfg::HOSTNAME, WiFi.localIP().toString().c_str());
+        else
+            Term.printf("Wi-Fi: not connected (status %d)\n", WiFi.status());
+    }
     else if (eq(c, "map")) servos::printTable();
     else if (eq(c, "export")) servos::printExport();
     else if (eq(c, "all") || eq(c, "neutral")) { servos::allNeutral(); Term.println("All joints to neutral."); }

@@ -1,16 +1,18 @@
 # Motion
 
-All motion uses the joint map (board/channel/dir from `wiggle`, stored in flash). Offsets follow each
-joint's `dir`: **+ = lift up, knee up, swing forward**. Moves are linear ramps updated every 20 ms (one
+All motion uses the joint map (board/channel/dir from `wiggle`, stored in flash). Every offset is from
+the joint's **neutral** (its centre / trim) and follows its `dir`: **+ = lift up, knee up, swing forward**.
+Neutral is 1500 for every joint except **FML X = 1600** (trimmed 100 us forward). Trim any joint with
+`setneutral <leg> <joint> <us>` then `save`. Moves are linear ramps updated every 20 ms (one
 servo frame); all joints in a step move together. **Any key aborts a move and holds position.**
 
 ## Stand up - `stand` / `stand step`
 
 Also a power-harness test: each step moves one joint type on all 8 legs at once.
 
-| Step | Joints | Target (from 1500 us) | Ramp |
+| Step | Joints | Target (offset from neutral) | Ramp |
 |---|---|---|---|
-| 1 | all 24 | 1500 (centre) | 500 ms |
+| 1 | all 24 | neutral | 500 ms |
 | 2 | 8x Y (lift) | `STAND_LIFT_US` = +100 (up) | 500 ms |
 | 3 | 8x K (knee) | `STAND_TUCK_US` = -300 (toward body; + moves them outward) | 500 ms |
 | 4 | 8x Y (lift) | `STAND_PUSH_US` = -100 (down - lifts the body) | 750 ms |
