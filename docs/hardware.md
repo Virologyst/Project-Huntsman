@@ -63,7 +63,7 @@ raises the `CLIMB` flag (docs/motion.md); `tof` on the console shows the live re
 
 Verified on the rebuilt robot with `wiggle` (2026-10-03); matches `DEFAULTS` in `src/servo_map.cpp`.
 The live map is in ESP32 flash (`map`). Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
-Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FML X = 1650 (150 us forward) and FMR X = 1400 (100 us forward).
+Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FML X = 1650 (150 us forward) and FMR X = 1350 (150 us forward).
 
 | Leg | Board | K (ch / dir) | Y (ch / dir) | X (ch / dir) |
 |---|---|---|---|---|
