@@ -175,24 +175,32 @@ constexpr int OUTPUT_COUNT = cfg::BOARD_COUNT * 16;  // output o = board (o / 16
 constexpr int FIND_PULSE_US = 1500;
 bool servosUnplugged = false;  // asked once per boot
 
+// Prints the prompt and blocks until a non-empty line arrives (trimmed into buf)
+void readAnswer(const char *prompt, char *buf, size_t size) {
+    Serial.print(prompt);
+    size_t len = 0;
+    while (true) {
+        if (!Serial.available()) { delay(5); continue; }
+        char c = Serial.read();
+        if (c == '\r' || c == '\n') {
+            if (len) break;
+            continue;
+        }
+        if (c == ' ' && !len) continue;
+        if (len < size - 1) buf[len++] = c;
+    }
+    while (len && buf[len - 1] == ' ') len--;
+    buf[len] = 0;
+    Serial.println();
+}
+
 // Blocks until a y/n line arrives. Returns 'y', 'n' or 'q' (quit).
 char ask(const char *question) {
+    char prompt[96], buf[16];
+    snprintf(prompt, sizeof(prompt), "%s (y/n, q = quit): ", question);
     while (true) {
-        Serial.printf("%s (y/n, q = quit): ", question);
-        char buf[16];
-        size_t len = 0;
-        while (true) {
-            if (!Serial.available()) { delay(5); continue; }
-            char c = Serial.read();
-            if (c == '\r' || c == '\n') {
-                if (len) break;
-                continue;
-            }
-            if (len < sizeof(buf) - 1) buf[len++] = c;
-        }
-        buf[len] = 0;
+        readAnswer(prompt, buf, sizeof(buf));
         char a = tolower(buf[0]);
-        Serial.println();
         if (a == 'y' || a == 'n' || a == 'q') return a;
     }
 }
@@ -330,6 +338,125 @@ void cmdCheck(char *tok[], int n) {
     }
     pwm::allOff();
     Serial.println("\nDone - type 'map' to review, then 'save'.");
+}
+
+// ---------- wiggle mapping (servos and legs connected) ----------
+
+constexpr int WIGGLE_CENTER_US = 1500;
+constexpr int WIGGLE_US = 50;          // 1550 -> 1500 -> 1450 -> 1500 (~7 deg on a 270 deg servo)
+constexpr uint16_t WIGGLE_HOLD_MS = 600;
+
+void wiggleOutput(int b, int ch) {
+    if (pwm::pulse(b, ch) != WIGGLE_CENTER_US) {
+        pwm::setPulse(b, ch, WIGGLE_CENTER_US);
+        delay(WIGGLE_HOLD_MS);
+    }
+    const int seq[] = {WIGGLE_CENTER_US + WIGGLE_US, WIGGLE_CENTER_US, WIGGLE_CENTER_US - WIGGLE_US, WIGGLE_CENTER_US};
+    for (int us : seq) {
+        pwm::setPulse(b, ch, us);
+        delay(WIGGLE_HOLD_MS);
+    }
+}
+
+enum WiggleResult { WIGGLE_MAPPED, WIGGLE_UNUSED, WIGGLE_QUIT };
+
+// Wiggle one output and ask what moved; records leg/joint and direction
+WiggleResult wiggleAsk(int b, int ch) {
+    char buf[16];
+    int mapped = servos::findByOutput(b, ch);
+    Serial.printf("\n--- Board %d ch %d", b, ch);
+    if (mapped >= 0) Serial.printf(" (old map: %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
+    Serial.println(" ---");
+    wiggleOutput(b, ch);
+
+    const char *leg = nullptr;
+    while (!leg) {
+        readAnswer("Which leg moved? (FL FML BML BL FR FMR BMR BR | none | r = repeat | q = quit): ", buf, sizeof(buf));
+        if (eq(buf, "q")) return WIGGLE_QUIT;
+        if (eq(buf, "r")) { wiggleOutput(b, ch); continue; }
+        if (eq(buf, "none") || eq(buf, "n")) {
+            Serial.printf("Board %d ch %d: unused.\n", b, ch);
+            return WIGGLE_UNUSED;
+        }
+        for (auto l : servos::LEGS)
+            if (eq(buf, l)) leg = l;
+        if (!leg) Serial.println("Not a leg name.");
+    }
+
+    int i = -1;
+    while (i < 0) {
+        readAnswer("Which joint? (K = knee, Y = lift, X = swing | r = repeat | q = quit): ", buf, sizeof(buf));
+        if (eq(buf, "q")) return WIGGLE_QUIT;
+        if (eq(buf, "r")) { wiggleOutput(b, ch); continue; }
+        if (strlen(buf) == 1) i = servos::find(leg, buf[0]);
+        if (i < 0) Serial.println("Use K, Y or X.");
+    }
+    Joint &j = servos::joints[i];
+
+    bool swing = j.type == 'X';
+    int dir = 0;
+    while (!dir) {
+        readAnswer(swing ? "First move: forward or back? (f/b | r = repeat | q = quit): "
+                         : "First move: up or down? (u/d | r = repeat | q = quit): ",
+                   buf, sizeof(buf));
+        char a = tolower(buf[0]);
+        if (a == 'q') return WIGGLE_QUIT;
+        if (a == 'r') { wiggleOutput(b, ch); continue; }
+        if (swing ? (a == 'f') : (a == 'u')) dir = +1;
+        else if (swing ? (a == 'b') : (a == 'd')) dir = -1;
+        else Serial.println(swing ? "Use f or b." : "Use u or d.");
+    }
+
+    if (j.wired && (j.board != b || j.channel != ch))
+        Serial.printf("  Note: %s %c was already found on board %d ch %d this session - replacing.\n", j.leg, j.type,
+                      j.board, j.channel);
+    int other = servos::findByOutput(b, ch);
+    if (other >= 0 && other != i && servos::joints[other].wired)
+        Serial.printf("  WARNING: %s %c was also recorded on this output - check it again.\n",
+                      servos::joints[other].leg, servos::joints[other].type);
+
+    bool flipped = j.dir != dir;
+    j.board = b;
+    j.channel = ch;
+    j.dir = dir;
+    j.wired = true;
+    Serial.printf("Board %d ch %d = %s %c, dir %+d (+ = %s)%s\n", b, ch, j.leg, j.type, dir, swing ? "forward" : "up",
+                  flipped ? "  [direction changed]" : "");
+    return WIGGLE_MAPPED;
+}
+
+// wiggle | wiggle <b> | wiggle <b> <ch>
+void cmdWiggle(char *tok[], int n) {
+    int b = n > 1 ? atoi(tok[1]) : 0, ch = -1;
+    if ((n > 1 && !pwm::validBoard(b)) || (n > 2 && !parseChannel(tok[2], ch))) {
+        Serial.println("Usage: wiggle [<1|2> [<ch>]]");
+        return;
+    }
+    int firstB = n > 1 ? b : 1, lastB = n > 1 ? b : cfg::BOARD_COUNT;
+    if (n == 1)  // full remap: start with every joint unconfirmed
+        for (int i = 0; i < servos::COUNT; i++) servos::joints[i].wired = false;
+    Serial.printf("Each output moves %d -> %d -> %d -> %d us. Watch the legs.\n", WIGGLE_CENTER_US + WIGGLE_US,
+                  WIGGLE_CENTER_US, WIGGLE_CENTER_US - WIGGLE_US, WIGGLE_CENTER_US);
+    Serial.println("Convention: + = lift/knee UP, swing FORWARD. Answers set each joint's channel and direction.");
+
+    int mapped = 0, unused = 0;
+    for (int bb = firstB; bb <= lastB; bb++) {
+        for (int c = (ch >= 0 ? ch : 0); c <= (ch >= 0 ? ch : 15); c++) {
+            WiggleResult r = wiggleAsk(bb, c);
+            if (r == WIGGLE_QUIT) {
+                Serial.printf("\nStopped. %d mapped, %d unused. 'save' to keep.\n", mapped, unused);
+                return;
+            }
+            r == WIGGLE_MAPPED ? mapped++ : unused++;
+        }
+    }
+    Serial.printf("\nDone: %d mapped, %d unused.\n", mapped, unused);
+    if (n == 1) {
+        for (int i = 0; i < servos::COUNT; i++)
+            if (!servos::joints[i].wired)
+                Serial.printf("  Not found: %s %c\n", servos::joints[i].leg, servos::joints[i].type);
+    }
+    Serial.println("Type 'map' to review, then 'save'.");
 }
 
 // Every output gets a unique width: board 1 = 1000 + 20*ch, board 2 = 1600 + 20*ch
@@ -481,6 +608,7 @@ void handle(char *cmdLine) {
     else if (eq(c, "assign")) cmdAssign(tok, n);
     else if (eq(c, "find")) cmdFind(tok, n);
     else if (eq(c, "check")) cmdCheck(tok, n);
+    else if (eq(c, "wiggle")) cmdWiggle(tok, n);
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
@@ -519,6 +647,9 @@ void printHelp() {
         "  setdir <leg> <joint> <1|-1>\n"
         "  assign <leg> <joint> <b> <ch>   rewire a joint to another output\n"
         "  map | export           show joint table / print it as C++ for servo_map.cpp\n"
+        "Wiggle mapping (servos connected):\n"
+        "  wiggle | wiggle 1 | wiggle 1 5   wiggle each output 1550/1500/1450/1500, answer which leg,\n"
+        "                                   joint and direction -> sets channel + dir (+ = up / forward)\n"
         "Harness check (SERVOS UNPLUGGED):\n"
         "  check FL | check       leg by leg: probe each wire, y/n; n -> locates it and fixes the map\n"
         "  find FL K              probe FL K's wire, answer y/n -> confirms or fixes its board/channel\n"

@@ -44,6 +44,17 @@ Joint moves are clamped to the joint's min/max. To explore beyond the current li
 | `freq 50` | Frame rate for both boards |
 | `status` | Clocks, frame rate, active outputs |
 
+### Wiggle mapping (servos and legs connected)
+
+| Command | Effect |
+|---|---|
+| `wiggle` | Every output on both boards in turn: 1550 -> 1500 -> 1450 -> 1500 us (600 ms each). You answer which leg moved (or `none`), which joint, and whether the **first** move went up/down (K, Y) or forward/back (X). Sets the joint's board/channel and `dir`. Lists joints not found at the end |
+| `wiggle 1` | Board 1 only |
+| `wiggle 1 5` | One output (re-check a single channel) |
+
+At any question: `r` repeats the wiggle, `q` stops. Direction convention: **+ = lift up, knee up, swing
+forward**, so `dir` is +1 when the 1550 move went up/forward and -1 when it went down/back (inverted motor).
+
 ### Harness check (servos unplugged)
 
 | Command | Effect |
@@ -92,7 +103,17 @@ the leg's three wires keep their K, Y, X order (confirmed later with servos plug
 
 With a calibrated clock and a precise scope readout, `ident confirm` + `which <width>` is a faster alternative.
 
-## 3. Joint mapping (one servo at a time)
+## 3. Wiggle mapping (all legs connected) - preferred
+
+1. Robot on a stand, legs free to move. Boot puts every output at 1500 us.
+2. `wiggle`. For each output: watch, then answer leg (or `none`), joint, first-move direction.
+3. At the end it lists any joints not found. `map` - check 24 joints `Wired yes`, no duplicate warnings.
+4. `save`.
+
+This replaces the harness check and the channel/direction parts of joint mapping below; limits
+(min/max/neutral) still need setting per joint.
+
+## 4. Joint limits (one joint at a time)
 
 Do this with the leg free to move (robot on a stand) and a hand on the servo power switch.
 

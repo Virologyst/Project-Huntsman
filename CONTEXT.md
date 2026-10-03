@@ -3,7 +3,7 @@
 Living summary of what this project is, what has been decided and why, and where it is up to.
 **Keep this file current** - update it whenever hardware, decisions, status or next steps change.
 
-_Last updated: 2026-10-01_
+_Last updated: 2026-10-03_
 
 ## What it is
 
@@ -54,8 +54,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] Harness tools: `ident` / `which` to identify outputs by scope, `assign` to rewire joints (saved to flash)
 - [x] `find` (y/n bisection) for harness check - works without clock calibration
 - [x] `check <leg>`: leg-by-leg harness check at the leg connector (wires can't be traced in the chassis)
-- [ ] Harness mapping: user is doing it manually - `p <b> <ch> 1500` per channel, probe the leg wires,
-      then `assign <leg> <joint> <b> <ch>` + `save` (4 channels per leg group, one skipped)  <- doing now.
+- [x] `wiggle`: moves each output +/-50 us around 1500, user answers leg / joint / direction -> sets
+      channel and dir (convention + = lift up, knee up, swing forward)
+- [ ] All legs now connected: full `wiggle` run, `save`  <- next
       So far: user's `find FL K` saved FL K = board 1 ch 2 (prototype had that as BR X) - re-verify with `check FL`
 - [ ] K/Y/X order within each leg connector: assumed unchanged, confirm with servos plugged in
 - [ ] Board clock calibration (`cal` / `calf`), then `save` - deferred: scope readout only gives 2 digits at
@@ -74,8 +75,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Next step
 
-1. Harness check with servos unplugged: `check FL` ... `check BR` (or `check`), `save`.
+1. `wiggle` with all legs connected -> channel + direction for all 24 joints, `save`.
 2. Calibrate each board's oscillator (`cal` / `calf`, `save`).
-3. Map joints one servo at a time.
+3. Set min/max/neutral per joint.
+4. Possible: OTA firmware updates over Wi-Fi (ArduinoOTA / espota) - needs the U.FL antenna fitted and
+   Wi-Fi credentials in a git-ignored secrets file.
 
 Procedures in [docs/calibration.md](docs/calibration.md).
