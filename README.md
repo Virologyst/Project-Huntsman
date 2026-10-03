@@ -5,7 +5,8 @@ Firmware for an 8-legged, load-carrying spider robot: ESP32-S3 + 2x PCA9685 driv
 - **Project context, decisions and status:** [CONTEXT.md](CONTEXT.md)
 - **Hardware, wiring and channel map:** [docs/hardware.md](docs/hardware.md)
 - **Calibration console and procedures:** [docs/calibration.md](docs/calibration.md)
-- **Motion (stand / sit):** [docs/motion.md](docs/motion.md)
+- **Motion (stand / sit / walk):** [docs/motion.md](docs/motion.md)
+- **Wi-Fi uploads and console:** [docs/wifi.md](docs/wifi.md)
 
 ## Current firmware
 
@@ -33,6 +34,18 @@ pio device monitor -p COM4 -b 115200
 
 If an upload won't start: hold **BOOT**, tap **RST**, release BOOT, retry.
 
+**Over Wi-Fi** (after one USB upload of the Wi-Fi firmware): select the `wifi` environment in CLion, or
+
+```bash
+pio run -e wifi -t upload
+```
+
+```bash
+pio device monitor -e wifi
+```
+
+Wi-Fi credentials go in `include/secrets.h` (git-ignored) - copy `include/secrets.example.h`.
+
 ## Layout
 
 ```
@@ -40,7 +53,10 @@ include/config.h       pins, I2C addresses, hard pulse limits
 include/pwm.h          PCA9685 control, per-board clock calibration   (src/pwm.cpp)
 include/servo_map.h    leg/joint -> board/channel map + calibration   (src/servo_map.cpp)
 include/motion.h       ramps, stand / sit sequences                    (src/motion.cpp)
-include/console.h      serial command console                          (src/console.cpp)
+include/console.h      command console                                 (src/console.cpp)
+include/term.h         console I/O on USB + Wi-Fi at once              (src/term.cpp)
+include/net.h          Wi-Fi, OTA uploads, network console             (src/net.cpp)
+include/secrets.h      Wi-Fi credentials - git-ignored (template: secrets.example.h)
 src/main.cpp           setup/loop
 docs/                  hardware and calibration docs
 ```

@@ -7,6 +7,10 @@ namespace cfg {
 
 constexpr uint32_t SERIAL_BAUD = 115200;
 
+// Wi-Fi (credentials in include/secrets.h). OTA uploads and the console are reached at HOSTNAME.local
+constexpr const char *HOSTNAME = "huntsman";
+constexpr uint16_t CONSOLE_PORT = 23;  // raw TCP console (PlatformIO monitor: socket://huntsman.local:23)
+
 // I2C to the PCA9685 boards
 constexpr uint8_t SDA_PIN = 8;
 constexpr uint8_t SCL_PIN = 9;

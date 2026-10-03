@@ -44,6 +44,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - **Joint letters: K = knee, Y = lift (femur), X = swing (coxa)** - confirmed by user.
 - **Channel map is not trusted** - full rebuild of the harness, so board/channel per joint is stored in flash
   and corrected on the robot (`assign`), not only in code. PCA9685 OE is not wired (outputs always enabled).
+- **Wi-Fi console mirrors USB** (`Term` in term.h) so the robot can be driven untethered; OTA sits the
+  robot down before flashing. No OTA password - trusted home network (user's call).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
 ## Current status
@@ -72,6 +74,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [ ] Leg geometry (segment lengths) -> inverse kinematics
 - [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right` (untested on hardware)
 - [ ] IK-based gait; wave gait for heavy loads
+- [x] Wi-Fi: OTA uploads (`pio run -e wifi -t upload`) + console on huntsman.local:23, credentials in
+      git-ignored include/secrets.h (docs/wifi.md) - built, NOT yet uploaded/tested (needs one USB upload)
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 
 ## Open questions
@@ -84,8 +88,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 1. First walk test: legs in the air on the stand (`walk 2`), then on the floor; tune `WALK_*`.
 2. Leg segment lengths (coxa, femur, tibia) -> IK -> straight-line foot paths, body height/tilt control.
-3. Wi-Fi: OTA uploads + serial console over Wi-Fi (not set up yet; needs the U.FL antenna and the user's
-   Wi-Fi credentials in a git-ignored secrets file).
+3. Upload the Wi-Fi firmware over USB once (also carries the untested walking code), confirm
+   huntsman.local, then test OTA and the network console. Antenna fitted? (unconfirmed)
 - Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
 
 Procedures in [docs/calibration.md](docs/calibration.md) and [docs/motion.md](docs/motion.md).

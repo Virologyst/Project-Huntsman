@@ -3,6 +3,7 @@
 #include <Preferences.h>
 
 #include "config.h"
+#include "term.h"
 #include "pwm.h"
 
 namespace {
@@ -132,32 +133,32 @@ void save() {
 }
 
 void printTable() {
-    Serial.println("\n Leg  J  Brd Ch  Wired   Min  Neut   Max  Dir    Now");
+    Term.println("\n Leg  J  Brd Ch  Wired   Min  Neut   Max  Dir    Now");
     int wired = 0;
     for (int i = 0; i < COUNT; i++) {
         const Joint &j = joints[i];
         int now = position(i);
         wired += j.wired;
-        Serial.printf(" %-4s %c   %d  %2d  %-5s  %4d  %4d  %4d  %+d   ", j.leg, j.type, j.board, j.channel,
+        Term.printf(" %-4s %c   %d  %2d  %-5s  %4d  %4d  %4d  %+d   ", j.leg, j.type, j.board, j.channel,
                       j.wired ? "yes" : "-", j.minUs, j.neutralUs, j.maxUs, j.dir);
-        if (now) Serial.printf("%4d\n", now);
-        else Serial.println(" off");
+        if (now) Term.printf("%4d\n", now);
+        else Term.println(" off");
     }
-    Serial.printf("%d of %d joints confirmed on the harness\n", wired, COUNT);
+    Term.printf("%d of %d joints confirmed on the harness\n", wired, COUNT);
     for (int i = 0; i < COUNT; i++)
         for (int k = i + 1; k < COUNT; k++)
             if (joints[i].board == joints[k].board && joints[i].channel == joints[k].channel)
-                Serial.printf("WARNING: %s %c and %s %c share board %d ch %d\n", joints[i].leg, joints[i].type,
+                Term.printf("WARNING: %s %c and %s %c share board %d ch %d\n", joints[i].leg, joints[i].type,
                               joints[k].leg, joints[k].type, joints[i].board, joints[i].channel);
 }
 
 void printExport() {
-    Serial.println("\n// Paste into DEFAULTS in src/servo_map.cpp");
+    Term.println("\n// Paste into DEFAULTS in src/servo_map.cpp");
     for (int i = 0; i < COUNT; i++) {
         const Joint &j = joints[i];
         char leg[8];
         snprintf(leg, sizeof(leg), "\"%s\",", j.leg);
-        Serial.printf("    {%-6s '%c', %d, %2d, %4d, %4d, %4d, %+d},\n", leg, j.type, j.board, j.channel,
+        Term.printf("    {%-6s '%c', %d, %2d, %4d, %4d, %4d, %+d},\n", leg, j.type, j.board, j.channel,
                       j.minUs, j.maxUs, j.neutralUs, j.dir);
     }
 }

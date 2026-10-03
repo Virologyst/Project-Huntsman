@@ -10,6 +10,7 @@ project status, update in the same change:
 - `docs/hardware.md` - wiring, pins, channel map
 - `docs/calibration.md` - console commands and procedures
 - `docs/motion.md` - motion sequences and their tuning constants
+- `docs/wifi.md` - Wi-Fi uploads and console
 - `README.md` - only if build steps or layout change
 
 ## Build / upload
@@ -18,8 +19,12 @@ PlatformIO Core is at `%USERPROFILE%\.platformio\penv\Scripts\pio.exe` (user run
 
 ```bash
 pio run                                  # build
-pio run -t upload --upload-port COM4     # upload (fails if a serial monitor has COM4 open)
+pio run -t upload --upload-port COM4     # upload over USB (fails if a serial monitor has COM4 open)
+pio run -e wifi -t upload                # upload over Wi-Fi to huntsman.local (docs/wifi.md)
 ```
+
+Console output goes through `Term` (term.h: USB + Wi-Fi), not `Serial` - use `Term.print*` in new code.
+`include/secrets.h` holds the user's Wi-Fi credentials: git-ignored, never commit it or echo its contents.
 
 ## Safety
 
@@ -34,4 +39,4 @@ pio run -t upload --upload-port COM4     # upload (fails if a serial monitor has
 
 ## Style
 
-C++ (Arduino core on ESP32-S3), 4-space indent, namespaces per module (`pwm`, `servos`, `motion`, `console`, `cfg`).
+C++ (Arduino core on ESP32-S3), 4-space indent, namespaces per module (`pwm`, `servos`, `motion`, `console`, `net`, `cfg`).

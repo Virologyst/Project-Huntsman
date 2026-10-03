@@ -5,6 +5,9 @@
 .idea/
 cmake-build-*/
 
+# Wi-Fi credentials (copy include/secrets.example.h)
+include/secrets.h
+
 # OS
 .DS_Store
 Thumbs.db

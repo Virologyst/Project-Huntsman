@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "term.h"
 #include "motion.h"
 #include "pwm.h"
 #include "servo_map.h"
@@ -35,33 +36,33 @@ bool parseChannel(const char *s, int &ch) {
 
 bool checkUs(int us) {
     if (us >= cfg::HARD_MIN_US && us <= cfg::HARD_MAX_US) return true;
-    Serial.printf("Pulse must be %d-%d us\n", cfg::HARD_MIN_US, cfg::HARD_MAX_US);
+    Term.printf("Pulse must be %d-%d us\n", cfg::HARD_MIN_US, cfg::HARD_MAX_US);
     return false;
 }
 
 void printJoint(int i) {
     const Joint &j = servos::joints[i];
     int now = servos::position(i);
-    Serial.printf("%s %c (board %d ch %d): min %d, neutral %d, max %d, dir %+d, now ", j.leg, j.type,
+    Term.printf("%s %c (board %d ch %d): min %d, neutral %d, max %d, dir %+d, now ", j.leg, j.type,
                   j.board, j.channel, j.minUs, j.neutralUs, j.maxUs, j.dir);
-    if (now) Serial.printf("%d us\n", now);
-    else Serial.println("off");
+    if (now) Term.printf("%d us\n", now);
+    else Term.println("off");
 }
 
 void reportMove(int i, int requested, int sent) {
     const Joint &j = servos::joints[i];
-    Serial.printf("%s %c -> %d us (neutral %+d)", j.leg, j.type, sent, (sent - j.neutralUs) * j.dir);
-    if (sent != requested) Serial.printf("  [clamped from %d to joint limit]", requested);
-    Serial.println();
+    Term.printf("%s %c -> %d us (neutral %+d)", j.leg, j.type, sent, (sent - j.neutralUs) * j.dir);
+    if (sent != requested) Term.printf("  [clamped from %d to joint limit]", requested);
+    Term.println();
 }
 
 void printStatus() {
-    Serial.printf("\nFrame rate: %.1f Hz (period %.3f ms)\n", pwm::frameHz(), 1000.0f / pwm::frameHz());
+    Term.printf("\nFrame rate: %.1f Hz (period %.3f ms)\n", pwm::frameHz(), 1000.0f / pwm::frameHz());
     for (int b = 1; b <= cfg::BOARD_COUNT; b++) {
-        Serial.printf("Board %d (0x%02X): %s, osc %lu Hz, last pulse %d us\n", b, cfg::BOARD_ADDR[b - 1],
+        Term.printf("Board %d (0x%02X): %s, osc %lu Hz, last pulse %d us\n", b, cfg::BOARD_ADDR[b - 1],
                       pwm::boardFound(b) ? "OK" : "NOT FOUND", (unsigned long)pwm::osc(b), pwm::lastPulse(b));
         for (int ch = 0; ch < 16; ch++)
-            if (pwm::pulse(b, ch)) Serial.printf("   ch %2d: %d us\n", ch, pwm::pulse(b, ch));
+            if (pwm::pulse(b, ch)) Term.printf("   ch %2d: %d us\n", ch, pwm::pulse(b, ch));
     }
 }
 
@@ -82,19 +83,19 @@ void cmdLeg(char *tok[], int n) {
             if (neutral) servos::moveRaw(i, servos::joints[i].neutralUs);
             else servos::off(i);
         }
-        Serial.printf("%s %s\n", leg, neutral ? "to neutral" : "off");
+        Term.printf("%s %s\n", leg, neutral ? "to neutral" : "off");
         return;
     }
 
     int i = servos::find(leg, tok[1][0]);
-    if (i < 0) { Serial.printf("No joint '%c' on %s (use K, Y or X)\n", tok[1][0], leg); return; }
+    if (i < 0) { Term.printf("No joint '%c' on %s (use K, Y or X)\n", tok[1][0], leg); return; }
     const char *val = tok[1][1] ? tok[1] + 1 : (n > 2 ? tok[2] : nullptr);
 
     if (!val) {
         printJoint(i);
     } else if (eq(val, "off")) {
         servos::off(i);
-        Serial.printf("%s %c off\n", leg, servos::joints[i].type);
+        Term.printf("%s %c off\n", leg, servos::joints[i].type);
     } else if (eq(val, "neutral") || eq(val, "n")) {
         int us = servos::joints[i].neutralUs;
         reportMove(i, us, servos::moveRaw(i, us));
@@ -107,44 +108,44 @@ void cmdLeg(char *tok[], int n) {
         if (!checkUs(us)) return;
         reportMove(i, us, servos::moveRaw(i, us));
     } else {
-        Serial.println("Usage: <leg> <K|Y|X> <us | +N | -N | neutral | off>");
+        Term.println("Usage: <leg> <K|Y|X> <us | +N | -N | neutral | off>");
     }
 }
 
 // setmin|setmax|setneutral <leg> <joint> [us]   (no us = current position)
 void cmdSetLimit(char *tok[], int n) {
-    if (n < 3 || !servos::isLeg(tok[1])) { Serial.printf("Usage: %s <leg> <K|Y|X> [us]\n", tok[0]); return; }
+    if (n < 3 || !servos::isLeg(tok[1])) { Term.printf("Usage: %s <leg> <K|Y|X> [us]\n", tok[0]); return; }
     int i = servos::find(tok[1], tok[2][0]);
-    if (i < 0) { Serial.println("No such joint (use K, Y or X)"); return; }
+    if (i < 0) { Term.println("No such joint (use K, Y or X)"); return; }
     Joint &j = servos::joints[i];
 
     int us = n > 3 ? atoi(tok[3]) : servos::position(i);
-    if (!us) { Serial.println("Joint is off - give a value or move it first"); return; }
+    if (!us) { Term.println("Joint is off - give a value or move it first"); return; }
     if (!checkUs(us)) return;
 
     if (eq(tok[0], "setmin")) {
-        if (us >= j.maxUs) { Serial.println("Min must be below max"); return; }
+        if (us >= j.maxUs) { Term.println("Min must be below max"); return; }
         j.minUs = us;
     } else if (eq(tok[0], "setmax")) {
-        if (us <= j.minUs) { Serial.println("Max must be above min"); return; }
+        if (us <= j.minUs) { Term.println("Max must be above min"); return; }
         j.maxUs = us;
     } else {
         j.neutralUs = us;
     }
     printJoint(i);
-    if (j.neutralUs < j.minUs || j.neutralUs > j.maxUs) Serial.println("  WARNING: neutral is outside min/max");
-    Serial.println("  (not saved - type 'save' to keep)");
+    if (j.neutralUs < j.minUs || j.neutralUs > j.maxUs) Term.println("  WARNING: neutral is outside min/max");
+    Term.println("  (not saved - type 'save' to keep)");
 }
 
 // setdir <leg> <joint> <1|-1>
 void cmdSetDir(char *tok[], int n) {
-    if (n < 4 || !servos::isLeg(tok[1])) { Serial.println("Usage: setdir <leg> <K|Y|X> <1|-1>"); return; }
+    if (n < 4 || !servos::isLeg(tok[1])) { Term.println("Usage: setdir <leg> <K|Y|X> <1|-1>"); return; }
     int i = servos::find(tok[1], tok[2][0]);
     int dir = atoi(tok[3]);
-    if (i < 0 || (dir != 1 && dir != -1)) { Serial.println("Usage: setdir <leg> <K|Y|X> <1|-1>"); return; }
+    if (i < 0 || (dir != 1 && dir != -1)) { Term.println("Usage: setdir <leg> <K|Y|X> <1|-1>"); return; }
     servos::joints[i].dir = dir;
     printJoint(i);
-    Serial.println("  (not saved - type 'save' to keep)");
+    Term.println("  (not saved - type 'save' to keep)");
 }
 
 // assign <leg> <joint> <board> <ch>
@@ -152,14 +153,14 @@ void cmdAssign(char *tok[], int n) {
     int ch;
     int b = n > 3 ? atoi(tok[3]) : 0;
     if (n < 5 || !servos::isLeg(tok[1]) || !pwm::validBoard(b) || !parseChannel(tok[4], ch)) {
-        Serial.println("Usage: assign <leg> <K|Y|X> <1|2> <ch>");
+        Term.println("Usage: assign <leg> <K|Y|X> <1|2> <ch>");
         return;
     }
     int i = servos::find(tok[1], tok[2][0]);
-    if (i < 0) { Serial.println("No such joint (use K, Y or X)"); return; }
+    if (i < 0) { Term.println("No such joint (use K, Y or X)"); return; }
     int other = servos::findByOutput(b, ch);
     if (other >= 0 && other != i) {
-        Serial.printf("Board %d ch %d is already %s %c - reassign that one too\n", b, ch,
+        Term.printf("Board %d ch %d is already %s %c - reassign that one too\n", b, ch,
                       servos::joints[other].leg, servos::joints[other].type);
     }
     servos::off(i);  // stop pulses on the old output
@@ -167,7 +168,7 @@ void cmdAssign(char *tok[], int n) {
     servos::joints[i].channel = ch;
     servos::joints[i].wired = false;  // manual assignment is unconfirmed until 'find'
     printJoint(i);
-    Serial.println("  (not saved - type 'save' to keep)");
+    Term.println("  (not saved - type 'save' to keep)");
 }
 
 // ---------- harness identification (NO SERVOS CONNECTED) ----------
@@ -178,11 +179,11 @@ bool servosUnplugged = false;  // asked once per boot
 
 // Prints the prompt and blocks until a non-empty line arrives (trimmed into buf)
 void readAnswer(const char *prompt, char *buf, size_t size) {
-    Serial.print(prompt);
+    Term.print(prompt);
     size_t len = 0;
     while (true) {
-        if (!Serial.available()) { delay(5); continue; }
-        char c = Serial.read();
+        if (!Term.available()) { delay(5); continue; }
+        char c = Term.read();
         if (c == '\r' || c == '\n') {
             if (len) break;
             continue;
@@ -192,7 +193,7 @@ void readAnswer(const char *prompt, char *buf, size_t size) {
     }
     while (len && buf[len - 1] == ' ') len--;
     buf[len] = 0;
-    Serial.println();
+    Term.println();
 }
 
 // Blocks until a y/n line arrives. Returns 'y', 'n' or 'q' (quit).
@@ -221,8 +222,8 @@ constexpr int LOCATE_BAD = -3;   // answers didn't add up
 
 bool confirmUnplugged() {
     if (servosUnplugged) return true;
-    Serial.println("This drives outputs with no limits - every servo must be UNPLUGGED.");
-    if (ask("Are all servos unplugged?") != 'y') { Serial.println("Cancelled."); return false; }
+    Term.println("This drives outputs with no limits - every servo must be UNPLUGGED.");
+    if (ask("Are all servos unplugged?") != 'y') { Term.println("Cancelled."); return false; }
     servosUnplugged = true;
     return true;
 }
@@ -255,9 +256,9 @@ int locateOutput() {
 }
 
 void reportLocateFailure(int r) {
-    if (r == LOCATE_QUIT) Serial.println("Cancelled.");
-    else if (r == LOCATE_NONE) Serial.println("No pulses on that wire - check probe, ground clip and harness.");
-    else Serial.println("Inconsistent answers - try again.");
+    if (r == LOCATE_QUIT) Term.println("Cancelled.");
+    else if (r == LOCATE_NONE) Term.println("No pulses on that wire - check probe, ground clip and harness.");
+    else Term.println("Inconsistent answers - try again.");
 }
 
 // Record that joint's wire is on output o; report MATCH / CHANGED
@@ -265,13 +266,13 @@ void recordJointOutput(int joint, int o) {
     int b = o / 16 + 1, ch = o % 16;
     Joint &j = servos::joints[joint];
     if (j.board == b && j.channel == ch) {
-        Serial.printf("MATCH: %s %c is on board %d ch %d.\n", j.leg, j.type, b, ch);
+        Term.printf("MATCH: %s %c is on board %d ch %d.\n", j.leg, j.type, b, ch);
     } else {
-        Serial.printf("CHANGED: %s %c was board %d ch %d, now board %d ch %d.\n", j.leg, j.type, j.board,
+        Term.printf("CHANGED: %s %c was board %d ch %d, now board %d ch %d.\n", j.leg, j.type, j.board,
                       j.channel, b, ch);
         int other = servos::findByOutput(b, ch);
         if (other >= 0 && other != joint)
-            Serial.printf("  %s %c also points at this output - check it too.\n", servos::joints[other].leg,
+            Term.printf("  %s %c also points at this output - check it too.\n", servos::joints[other].leg,
                           servos::joints[other].type);
         j.board = b;
         j.channel = ch;
@@ -284,30 +285,30 @@ void cmdFind(char *tok[], int n) {
     int joint = -1;
     if (n >= 3) {
         if (!servos::isLeg(tok[1]) || (joint = servos::find(tok[1], tok[2][0])) < 0) {
-            Serial.println("Usage: find [<leg> <K|Y|X>]");
+            Term.println("Usage: find [<leg> <K|Y|X>]");
             return;
         }
     }
     if (!confirmUnplugged()) return;
-    if (joint >= 0) Serial.printf("Probe the %s %c signal wire.\n", servos::joints[joint].leg, servos::joints[joint].type);
-    else Serial.println("Probe the signal wire you want to identify.");
+    if (joint >= 0) Term.printf("Probe the %s %c signal wire.\n", servos::joints[joint].leg, servos::joints[joint].type);
+    else Term.println("Probe the signal wire you want to identify.");
 
     int o = locateOutput();
     if (o < 0) { reportLocateFailure(o); return; }
 
     int mapped = servos::findByOutput(o / 16 + 1, o % 16);
-    Serial.printf("This wire is board %d ch %d", o / 16 + 1, o % 16);
-    if (mapped >= 0) Serial.printf(" (map says %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
-    Serial.println(".");
+    Term.printf("This wire is board %d ch %d", o / 16 + 1, o % 16);
+    if (mapped >= 0) Term.printf(" (map says %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
+    Term.println(".");
     if (joint < 0) return;
     recordJointOutput(joint, o);
-    Serial.println("  (not saved - type 'save' to keep)");
+    Term.println("  (not saved - type 'save' to keep)");
 }
 
 // check [leg] - per joint: pulse only the mapped output, user probes that wire. n -> locate it.
 // No leg = all 8 legs in order.
 void cmdCheck(char *tok[], int n) {
-    if (n >= 2 && !servos::isLeg(tok[1])) { Serial.println("Usage: check [<leg>]"); return; }
+    if (n >= 2 && !servos::isLeg(tok[1])) { Term.println("Usage: check [<leg>]"); return; }
     if (!confirmUnplugged()) return;
 
     int first = 0, last = servos::LEG_COUNT - 1;
@@ -316,7 +317,7 @@ void cmdCheck(char *tok[], int n) {
 
     for (int l = first; l <= last; l++) {
         const char *leg = servos::LEGS[l];
-        Serial.printf("\n--- %s ---\n", leg);
+        Term.printf("\n--- %s ---\n", leg);
         for (char type : {'K', 'Y', 'X'}) {
             int i = servos::find(leg, type);
             Joint &j = servos::joints[i];
@@ -324,21 +325,21 @@ void cmdCheck(char *tok[], int n) {
             char q[64];
             snprintf(q, sizeof(q), "Probe the %s %c wire (board %d ch %d) - pulses?", leg, type, j.board, j.channel);
             char a = ask(q);
-            if (a == 'q') { pwm::allOff(); Serial.println("Stopped. 'save' to keep what was confirmed."); return; }
+            if (a == 'q') { pwm::allOff(); Term.println("Stopped. 'save' to keep what was confirmed."); return; }
             if (a == 'y') {
                 j.wired = true;
-                Serial.printf("OK: %s %c on board %d ch %d.\n", leg, type, j.board, j.channel);
+                Term.printf("OK: %s %c on board %d ch %d.\n", leg, type, j.board, j.channel);
                 continue;
             }
-            Serial.printf("Not there. Keep the probe on the %s %c wire - locating it.\n", leg, type);
+            Term.printf("Not there. Keep the probe on the %s %c wire - locating it.\n", leg, type);
             int o = locateOutput();
-            if (o == LOCATE_QUIT) { Serial.println("Stopped. 'save' to keep what was confirmed."); return; }
-            if (o < 0) { reportLocateFailure(o); Serial.printf("%s %c left unconfirmed.\n", leg, type); continue; }
+            if (o == LOCATE_QUIT) { Term.println("Stopped. 'save' to keep what was confirmed."); return; }
+            if (o < 0) { reportLocateFailure(o); Term.printf("%s %c left unconfirmed.\n", leg, type); continue; }
             recordJointOutput(i, o);
         }
     }
     pwm::allOff();
-    Serial.println("\nDone - type 'map' to review, then 'save'.");
+    Term.println("\nDone - type 'map' to review, then 'save'.");
 }
 
 // ---------- wiggle mapping (servos and legs connected) ----------
@@ -365,9 +366,9 @@ enum WiggleResult { WIGGLE_MAPPED, WIGGLE_UNUSED, WIGGLE_QUIT };
 WiggleResult wiggleAsk(int b, int ch) {
     char buf[16];
     int mapped = servos::findByOutput(b, ch);
-    Serial.printf("\n--- Board %d ch %d", b, ch);
-    if (mapped >= 0) Serial.printf(" (old map: %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
-    Serial.println(" ---");
+    Term.printf("\n--- Board %d ch %d", b, ch);
+    if (mapped >= 0) Term.printf(" (old map: %s %c)", servos::joints[mapped].leg, servos::joints[mapped].type);
+    Term.println(" ---");
     wiggleOutput(b, ch);
 
     const char *leg = nullptr;
@@ -376,12 +377,12 @@ WiggleResult wiggleAsk(int b, int ch) {
         if (eq(buf, "q")) return WIGGLE_QUIT;
         if (eq(buf, "r")) { wiggleOutput(b, ch); continue; }
         if (eq(buf, "none") || eq(buf, "n")) {
-            Serial.printf("Board %d ch %d: unused.\n", b, ch);
+            Term.printf("Board %d ch %d: unused.\n", b, ch);
             return WIGGLE_UNUSED;
         }
         for (auto l : servos::LEGS)
             if (eq(buf, l)) leg = l;
-        if (!leg) Serial.println("Not a leg name.");
+        if (!leg) Term.println("Not a leg name.");
     }
 
     int i = -1;
@@ -390,7 +391,7 @@ WiggleResult wiggleAsk(int b, int ch) {
         if (eq(buf, "q")) return WIGGLE_QUIT;
         if (eq(buf, "r")) { wiggleOutput(b, ch); continue; }
         if (strlen(buf) == 1) i = servos::find(leg, buf[0]);
-        if (i < 0) Serial.println("Use K, Y or X.");
+        if (i < 0) Term.println("Use K, Y or X.");
     }
     Joint &j = servos::joints[i];
 
@@ -405,15 +406,15 @@ WiggleResult wiggleAsk(int b, int ch) {
         if (a == 'r') { wiggleOutput(b, ch); continue; }
         if (swing ? (a == 'f') : (a == 'u')) dir = +1;
         else if (swing ? (a == 'b') : (a == 'd')) dir = -1;
-        else Serial.println(swing ? "Use f or b." : "Use u or d.");
+        else Term.println(swing ? "Use f or b." : "Use u or d.");
     }
 
     if (j.wired && (j.board != b || j.channel != ch))
-        Serial.printf("  Note: %s %c was already found on board %d ch %d this session - replacing.\n", j.leg, j.type,
+        Term.printf("  Note: %s %c was already found on board %d ch %d this session - replacing.\n", j.leg, j.type,
                       j.board, j.channel);
     int other = servos::findByOutput(b, ch);
     if (other >= 0 && other != i && servos::joints[other].wired)
-        Serial.printf("  WARNING: %s %c was also recorded on this output - check it again.\n",
+        Term.printf("  WARNING: %s %c was also recorded on this output - check it again.\n",
                       servos::joints[other].leg, servos::joints[other].type);
 
     bool flipped = j.dir != dir;
@@ -421,7 +422,7 @@ WiggleResult wiggleAsk(int b, int ch) {
     j.channel = ch;
     j.dir = dir;
     j.wired = true;
-    Serial.printf("Board %d ch %d = %s %c, dir %+d (+ = %s)%s\n", b, ch, j.leg, j.type, dir, swing ? "forward" : "up",
+    Term.printf("Board %d ch %d = %s %c, dir %+d (+ = %s)%s\n", b, ch, j.leg, j.type, dir, swing ? "forward" : "up",
                   flipped ? "  [direction changed]" : "");
     return WIGGLE_MAPPED;
 }
@@ -430,34 +431,34 @@ WiggleResult wiggleAsk(int b, int ch) {
 void cmdWiggle(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0, ch = -1;
     if ((n > 1 && !pwm::validBoard(b)) || (n > 2 && !parseChannel(tok[2], ch))) {
-        Serial.println("Usage: wiggle [<1|2> [<ch>]]");
+        Term.println("Usage: wiggle [<1|2> [<ch>]]");
         return;
     }
     int firstB = n > 1 ? b : 1, lastB = n > 1 ? b : cfg::BOARD_COUNT;
     if (n == 1)  // full remap: start with every joint unconfirmed
         for (int i = 0; i < servos::COUNT; i++) servos::joints[i].wired = false;
-    Serial.printf("Each output moves %d -> %d -> %d -> %d us. Watch the legs.\n", WIGGLE_CENTER_US + WIGGLE_US,
+    Term.printf("Each output moves %d -> %d -> %d -> %d us. Watch the legs.\n", WIGGLE_CENTER_US + WIGGLE_US,
                   WIGGLE_CENTER_US, WIGGLE_CENTER_US - WIGGLE_US, WIGGLE_CENTER_US);
-    Serial.println("Convention: + = lift/knee UP, swing FORWARD. Answers set each joint's channel and direction.");
+    Term.println("Convention: + = lift/knee UP, swing FORWARD. Answers set each joint's channel and direction.");
 
     int mapped = 0, unused = 0;
     for (int bb = firstB; bb <= lastB; bb++) {
         for (int c = (ch >= 0 ? ch : 0); c <= (ch >= 0 ? ch : 15); c++) {
             WiggleResult r = wiggleAsk(bb, c);
             if (r == WIGGLE_QUIT) {
-                Serial.printf("\nStopped. %d mapped, %d unused. 'save' to keep.\n", mapped, unused);
+                Term.printf("\nStopped. %d mapped, %d unused. 'save' to keep.\n", mapped, unused);
                 return;
             }
             r == WIGGLE_MAPPED ? mapped++ : unused++;
         }
     }
-    Serial.printf("\nDone: %d mapped, %d unused.\n", mapped, unused);
+    Term.printf("\nDone: %d mapped, %d unused.\n", mapped, unused);
     if (n == 1) {
         for (int i = 0; i < servos::COUNT; i++)
             if (!servos::joints[i].wired)
-                Serial.printf("  Not found: %s %c\n", servos::joints[i].leg, servos::joints[i].type);
+                Term.printf("  Not found: %s %c\n", servos::joints[i].leg, servos::joints[i].type);
     }
-    Serial.println("Type 'map' to review, then 'save'.");
+    Term.println("Type 'map' to review, then 'save'.");
 }
 
 // Every output gets a unique width: board 1 = 1000 + 20*ch, board 2 = 1600 + 20*ch
@@ -466,61 +467,61 @@ constexpr int IDENT_STEP_US = 20;
 
 void cmdIdent(char *tok[], int n) {
     if (n < 2 || !eq(tok[1], "confirm")) {
-        Serial.println("ident drives ALL 32 outputs to arbitrary positions - servos must be DISCONNECTED.");
-        Serial.println("Type 'ident confirm' to proceed, 'limp' to stop.");
+        Term.println("ident drives ALL 32 outputs to arbitrary positions - servos must be DISCONNECTED.");
+        Term.println("Type 'ident confirm' to proceed, 'limp' to stop.");
         return;
     }
     for (int b = 1; b <= cfg::BOARD_COUNT; b++)
         for (int ch = 0; ch < 16; ch++) pwm::setPulse(b, ch, IDENT_BASE_US[b - 1] + ch * IDENT_STEP_US);
-    Serial.println("Ident pattern on: board 1 = 1000 + 20*ch us (1000-1300), board 2 = 1600 + 20*ch us (1600-1900).");
-    Serial.println("Probe a wire, then 'which <measured_us>'. 'limp' when done.");
+    Term.println("Ident pattern on: board 1 = 1000 + 20*ch us (1000-1300), board 2 = 1600 + 20*ch us (1600-1900).");
+    Term.println("Probe a wire, then 'which <measured_us>'. 'limp' when done.");
 }
 
 // which <us> - decode an ident pulse width to board/channel
 void cmdWhich(char *tok[], int n) {
-    if (n < 2) { Serial.println("Usage: which <measured_us>"); return; }
+    if (n < 2) { Term.println("Usage: which <measured_us>"); return; }
     float us = parseMeasuredUs(tok[1]);
     for (int b = 1; b <= cfg::BOARD_COUNT; b++) {
         int ch = lroundf((us - IDENT_BASE_US[b - 1]) / IDENT_STEP_US);
         if (ch < 0 || ch > 15 || fabsf(us - (IDENT_BASE_US[b - 1] + ch * IDENT_STEP_US)) > 8) continue;
         int j = servos::findByOutput(b, ch);
-        Serial.printf("%.0f us = board %d ch %d", us, b, ch);
-        if (j >= 0) Serial.printf("  (map says %s %c)\n", servos::joints[j].leg, servos::joints[j].type);
-        else Serial.println("  (not in map)");
+        Term.printf("%.0f us = board %d ch %d", us, b, ch);
+        if (j >= 0) Term.printf("  (map says %s %c)\n", servos::joints[j].leg, servos::joints[j].type);
+        else Term.println("  (not in map)");
         return;
     }
-    Serial.println("Not an ident width - is 'ident confirm' running and the board clock calibrated?");
+    Term.println("Not an ident width - is 'ident confirm' running and the board clock calibrated?");
 }
 
 // ---------- board-level commands (bypass joint limits, keep hard limits) ----------
 
 void cmdPulse(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0, ch;
-    if (n < 4 || !pwm::validBoard(b) || !parseChannel(tok[2], ch)) { Serial.println("Usage: p <1|2> <ch> <us>"); return; }
+    if (n < 4 || !pwm::validBoard(b) || !parseChannel(tok[2], ch)) { Term.println("Usage: p <1|2> <ch> <us>"); return; }
     int us = atoi(tok[3]);
     if (!checkUs(us)) return;
     pwm::setPulse(b, ch, us);
-    Serial.printf("Board %d ch %d -> %d us\n", b, ch, us);
+    Term.printf("Board %d ch %d -> %d us\n", b, ch, us);
 }
 
 void cmdOff(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0, ch;
-    if (n < 3 || !pwm::validBoard(b)) { Serial.println("Usage: off <1|2> <ch|all>"); return; }
+    if (n < 3 || !pwm::validBoard(b)) { Term.println("Usage: off <1|2> <ch|all>"); return; }
     if (eq(tok[2], "all")) {
         for (int c = 0; c < 16; c++) pwm::setOff(b, c);
-        Serial.printf("Board %d all off\n", b);
+        Term.printf("Board %d all off\n", b);
     } else if (parseChannel(tok[2], ch)) {
         pwm::setOff(b, ch);
-        Serial.printf("Board %d ch %d off\n", b, ch);
+        Term.printf("Board %d ch %d off\n", b, ch);
     } else {
-        Serial.println("Channel must be 0-15 or all");
+        Term.println("Channel must be 0-15 or all");
     }
 }
 
 void cmdSweep(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0, ch;
     if (n < 7 || !pwm::validBoard(b) || !parseChannel(tok[2], ch)) {
-        Serial.println("Usage: sweep <1|2> <ch> <from> <to> <step> <ms>");
+        Term.println("Usage: sweep <1|2> <ch> <from> <to> <step> <ms>");
         return;
     }
     int from = atoi(tok[3]), to = atoi(tok[4]), step = atoi(tok[5]), ms = atoi(tok[6]);
@@ -528,68 +529,68 @@ void cmdSweep(char *tok[], int n) {
     if (step <= 0) step = 10;
     int dir = to >= from ? 1 : -1;
 
-    Serial.printf("Sweep board %d ch %d: %d -> %d us, step %d, %d ms (any key aborts)\n", b, ch, from, to, step, ms);
-    while (Serial.available()) Serial.read();
+    Term.printf("Sweep board %d ch %d: %d -> %d us, step %d, %d ms (any key aborts)\n", b, ch, from, to, step, ms);
+    while (Term.available()) Term.read();
     for (int us = from; dir > 0 ? us <= to : us >= to; us += dir * step) {
         pwm::setPulse(b, ch, us);
-        Serial.printf("  %d us\n", us);
+        Term.printf("  %d us\n", us);
         for (uint32_t t = millis(); millis() - t < (uint32_t)ms;) {
-            if (Serial.available()) {
-                while (Serial.available()) Serial.read();
-                Serial.println("Aborted.");
+            if (Term.available()) {
+                while (Term.available()) Term.read();
+                Term.println("Aborted.");
                 return;
             }
         }
     }
-    Serial.println("Sweep done.");
+    Term.println("Sweep done.");
 }
 
 void cmdCal(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0;
-    if (n < 3 || !pwm::validBoard(b)) { Serial.println("Usage: cal <1|2> <measured_us>"); return; }
+    if (n < 3 || !pwm::validBoard(b)) { Term.println("Usage: cal <1|2> <measured_us>"); return; }
     float measured = parseMeasuredUs(tok[2]);
     int commanded = pwm::lastPulse(b);
-    if (!commanded) { Serial.println("Output a pulse on that board first (p ...)"); return; }
+    if (!commanded) { Term.println("Output a pulse on that board first (p ...)"); return; }
     if (measured < commanded * 0.8f || measured > commanded * 1.2f) {
-        Serial.println("Measured value is >20% off the commanded pulse - check the reading");
+        Term.println("Measured value is >20% off the commanded pulse - check the reading");
         return;
     }
     uint32_t old = pwm::osc(b);
     uint32_t now = pwm::calibrate(b, measured);
-    Serial.printf("Board %d osc %lu -> %lu Hz. Re-measure; repeat until it reads %d us, then 'save'.\n", b,
+    Term.printf("Board %d osc %lu -> %lu Hz. Re-measure; repeat until it reads %d us, then 'save'.\n", b,
                   (unsigned long)old, (unsigned long)now, commanded);
 }
 
 // calf <b> <measured_hz> - calibrate from the scope's frequency reading (needs a pulse running)
 void cmdCalFrame(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0;
-    if (n < 3 || !pwm::validBoard(b)) { Serial.println("Usage: calf <1|2> <measured_hz>"); return; }
+    if (n < 3 || !pwm::validBoard(b)) { Term.println("Usage: calf <1|2> <measured_hz>"); return; }
     float hz = atof(tok[2]);
-    if (!pwm::lastPulse(b)) { Serial.println("Output a pulse on that board first (p ...)"); return; }
+    if (!pwm::lastPulse(b)) { Term.println("Output a pulse on that board first (p ...)"); return; }
     if (hz < pwm::frameHz() * 0.8f || hz > pwm::frameHz() * 1.2f) {
-        Serial.println("Measured frequency is >20% off the frame rate - check the reading");
+        Term.println("Measured frequency is >20% off the frame rate - check the reading");
         return;
     }
     uint32_t old = pwm::osc(b);
     uint32_t now = pwm::calibrateFromFrame(b, hz);
-    Serial.printf("Board %d osc %lu -> %lu Hz. Re-measure; frequency should now read %.1f Hz, then 'save'.\n", b,
+    Term.printf("Board %d osc %lu -> %lu Hz. Re-measure; frequency should now read %.1f Hz, then 'save'.\n", b,
                   (unsigned long)old, (unsigned long)now, pwm::frameHz());
 }
 
 void cmdOsc(char *tok[], int n) {
     int b = n > 1 ? atoi(tok[1]) : 0;
-    if (n < 3 || !pwm::validBoard(b)) { Serial.println("Usage: osc <1|2> <hz>"); return; }
+    if (n < 3 || !pwm::validBoard(b)) { Term.println("Usage: osc <1|2> <hz>"); return; }
     uint32_t hz = strtoul(tok[2], nullptr, 10);
-    if (hz < 20000000 || hz > 30000000) { Serial.println("Oscillator must be 20-30 MHz"); return; }
+    if (hz < 20000000 || hz > 30000000) { Term.println("Oscillator must be 20-30 MHz"); return; }
     pwm::setOsc(b, hz);
-    Serial.printf("Board %d osc = %lu Hz\n", b, (unsigned long)hz);
+    Term.printf("Board %d osc = %lu Hz\n", b, (unsigned long)hz);
 }
 
 void cmdFreq(char *tok[], int n) {
     float hz = n > 1 ? atof(tok[1]) : 0;
-    if (hz < 40 || hz > 400) { Serial.println("Frame rate must be 40-400 Hz"); return; }
+    if (hz < 40 || hz > 400) { Term.println("Frame rate must be 40-400 Hz"); return; }
     pwm::setFrameHz(hz);
-    Serial.printf("Frame rate = %.1f Hz\n", hz);
+    Term.printf("Frame rate = %.1f Hz\n", hz);
 }
 
 void handle(char *cmdLine) {
@@ -602,8 +603,8 @@ void handle(char *cmdLine) {
     else if (eq(c, "status")) printStatus();
     else if (eq(c, "map")) servos::printTable();
     else if (eq(c, "export")) servos::printExport();
-    else if (eq(c, "all") || eq(c, "neutral")) { servos::allNeutral(); Serial.println("All joints to neutral."); }
-    else if (eq(c, "limp")) { pwm::allOff(); Serial.println("All outputs off."); }
+    else if (eq(c, "all") || eq(c, "neutral")) { servos::allNeutral(); Term.println("All joints to neutral."); }
+    else if (eq(c, "limp")) { pwm::allOff(); Term.println("All outputs off."); }
     else if (eq(c, "setmin") || eq(c, "setmax") || eq(c, "setneutral")) cmdSetLimit(tok, n);
     else if (eq(c, "setdir")) cmdSetDir(tok, n);
     else if (eq(c, "assign")) cmdAssign(tok, n);
@@ -615,7 +616,7 @@ void handle(char *cmdLine) {
     else if (eq(c, "walk")) motion::walk(motion::Gait::Forward, n > 1 ? atoi(tok[1]) : 0);
     else if (eq(c, "back")) motion::walk(motion::Gait::Back, n > 1 ? atoi(tok[1]) : 0);
     else if (eq(c, "turn")) {
-        if (n < 2 || !(eq(tok[1], "left") || eq(tok[1], "right"))) Serial.println("Usage: turn <left|right> [cycles]");
+        if (n < 2 || !(eq(tok[1], "left") || eq(tok[1], "right"))) Term.println("Usage: turn <left|right> [cycles]");
         else motion::walk(eq(tok[1], "left") ? motion::Gait::TurnLeft : motion::Gait::TurnRight,
                           n > 2 ? atoi(tok[2]) : 0);
     }
@@ -628,18 +629,18 @@ void handle(char *cmdLine) {
     else if (eq(c, "calf")) cmdCalFrame(tok, n);
     else if (eq(c, "osc")) cmdOsc(tok, n);
     else if (eq(c, "freq")) cmdFreq(tok, n);
-    else if (eq(c, "save")) { pwm::saveSettings(); servos::save(); Serial.println("Clocks and joint map saved to flash."); }
+    else if (eq(c, "save")) { pwm::saveSettings(); servos::save(); Term.println("Clocks and joint map saved to flash."); }
     else if (eq(c, "load")) {
         pwm::loadSettings();
-        Serial.println(servos::load() ? "Loaded from flash." : "Clocks loaded; no saved joint map - using defaults.");
+        Term.println(servos::load() ? "Loaded from flash." : "Clocks loaded; no saved joint map - using defaults.");
     }
     else if (eq(c, "defaults")) {
         pwm::resetSettings();
         servos::resetDefaults();
-        Serial.println("Defaults restored (not saved - type 'save' to keep).");
+        Term.println("Defaults restored (not saved - type 'save' to keep).");
     }
     else if (servos::isLeg(c)) cmdLeg(tok, n);
-    else Serial.printf("Unknown command '%s' - type help\n", c);
+    else Term.printf("Unknown command '%s' - type help\n", c);
 }
 
 }  // namespace
@@ -647,7 +648,7 @@ void handle(char *cmdLine) {
 namespace console {
 
 void printHelp() {
-    Serial.println(F(
+    Term.println(F(
         "\nMotion (any key aborts and holds):\n"
         "  stand | stand step     centre -> Y up -> K tuck -> Y down (step = Enter before each step)\n"
         "  sit                    lower the body, everything back to centre\n"
@@ -681,15 +682,15 @@ void printHelp() {
 }
 
 void poll() {
-    while (Serial.available()) {
-        char c = Serial.read();
+    while (Term.available()) {
+        char c = Term.read();
         if (c == '\r' || c == '\n') {
             if (lineLen) {
                 line[lineLen] = 0;
-                Serial.println();  // the serial monitor echoes typed text locally
+                Term.println();  // the serial monitor echoes typed text locally
                 handle(line);
                 lineLen = 0;
-                Serial.print("> ");
+                Term.print("> ");
             }
         } else if (c == 8 || c == 127) {  // backspace
             if (lineLen) lineLen--;

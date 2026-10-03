@@ -1,33 +1,34 @@
 #include "motion.h"
 
 #include "config.h"
+#include "term.h"
 #include "pwm.h"
 #include "servo_map.h"
 
 namespace {
 
 bool aborted() {
-    if (!Serial.available()) return false;
-    while (Serial.available()) Serial.read();
-    Serial.println("\nAborted - holding position. 'limp' to release, 'sit' to lower.");
+    if (!Term.available()) return false;
+    while (Term.available()) Term.read();
+    Term.println("\nAborted - holding position. 'limp' to release, 'sit' to lower.");
     return true;
 }
 
 // Step mode: wait for Enter (q cancels)
 bool waitStep(const char *what) {
-    Serial.printf("Next: %s - Enter to go, q to stop: ", what);
+    Term.printf("Next: %s - Enter to go, q to stop: ", what);
     while (true) {
-        if (!Serial.available()) { delay(5); continue; }
-        char c = Serial.read();
+        if (!Term.available()) { delay(5); continue; }
+        char c = Term.read();
         if (c == 'q' || c == 'Q') {
-            while (Serial.available()) Serial.read();
-            Serial.println("\nStopped - holding position.");
+            while (Term.available()) Term.read();
+            Term.println("\nStopped - holding position.");
             return false;
         }
         if (c == '\r' || c == '\n') {
             delay(20);
-            while (Serial.available()) Serial.read();
-            Serial.println();
+            while (Term.available()) Term.read();
+            Term.println();
             return true;
         }
     }
@@ -35,7 +36,7 @@ bool waitStep(const char *what) {
 
 bool step(bool stepMode, const char *what, char type, int offsetUs, uint16_t ms) {
     if (stepMode && !waitStep(what)) return false;
-    Serial.printf("%s ...\n", what);
+    Term.printf("%s ...\n", what);
     if (!motion::rampType(type, offsetUs, ms)) return false;
     if (!stepMode) delay(cfg::STAND_PAUSE_MS);
     return true;
@@ -103,8 +104,8 @@ void recentre(const char *const group[]) {
 }
 
 bool keyPressed() {
-    if (!Serial.available()) return false;
-    while (Serial.available()) Serial.read();
+    if (!Term.available()) return false;
+    while (Term.available()) Term.read();
     return true;
 }
 
@@ -150,15 +151,15 @@ bool rampAllCenter(uint16_t ms) {
 }
 
 bool standUp(bool stepMode) {
-    Serial.println("Stand up (any key aborts and holds).");
+    Term.println("Stand up (any key aborts and holds).");
     if (stepMode && !waitStep("all joints to centre")) return false;
-    Serial.println("all joints to centre ...");
+    Term.println("all joints to centre ...");
     if (!rampAllCenter(cfg::STAND_RAMP_MS)) return false;
     if (!stepMode) delay(cfg::STAND_PAUSE_MS);
     return step(stepMode, "all Y (lift) up", 'Y', cfg::STAND_LIFT_US, cfg::STAND_RAMP_MS) &&
            step(stepMode, "all K (knee) tuck toward body", 'K', cfg::STAND_TUCK_US, cfg::STAND_RAMP_MS) &&
            step(stepMode, "all Y (lift) DOWN - lifting the body", 'Y', cfg::STAND_PUSH_US, cfg::STAND_PUSH_MS) &&
-           (Serial.println("Standing."), true);
+           (Term.println("Standing."), true);
 }
 
 bool isStanding() {
@@ -172,14 +173,14 @@ bool isStanding() {
 
 bool walk(Gait g, int cycles) {
     if (!isStanding()) {
-        Serial.println("Not in the stand pose - run 'stand' first.");
+        Term.println("Not in the stand pose - run 'stand' first.");
         return false;
     }
     const char *name = g == Gait::Forward ? "forward" : g == Gait::Back ? "back"
                      : g == Gait::TurnLeft ? "turn left" : "turn right";
-    Serial.printf("Walking %s", name);
-    if (cycles) Serial.printf(", %d cycles", cycles);
-    Serial.println(" - any key stops after the current step.");
+    Term.printf("Walking %s", name);
+    if (cycles) Term.printf(", %d cycles", cycles);
+    Term.println(" - any key stops after the current step.");
 
     bool stop = false;
     for (int c = 0; !stop && (cycles == 0 || c < cycles); c++) {
@@ -191,15 +192,15 @@ bool walk(Gait g, int cycles) {
     }
     recentre(GROUP_A);
     recentre(GROUP_B);
-    Serial.println("Stopped - standing.");
+    Term.println("Stopped - standing.");
     return true;
 }
 
 bool sitDown() {
-    Serial.println("Sit down (any key aborts and holds).");
+    Term.println("Sit down (any key aborts and holds).");
     return step(false, "Y to centre - lowering the body", 'Y', 0, cfg::STAND_PUSH_MS) &&
            step(false, "K to centre", 'K', 0, cfg::STAND_RAMP_MS) &&
-           step(false, "X to centre", 'X', 0, cfg::STAND_RAMP_MS) && (Serial.println("Sitting."), true);
+           step(false, "X to centre", 'X', 0, cfg::STAND_RAMP_MS) && (Term.println("Sitting."), true);
 }
 
 }  // namespace motion
