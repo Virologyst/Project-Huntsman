@@ -12,13 +12,13 @@ Also a power-harness test: each step moves one joint type on all 8 legs at once.
 |---|---|---|---|
 | 1 | all 24 | 1500 (centre) | 1000 ms |
 | 2 | 8x Y (lift) | `STAND_LIFT_US` = +100 (up) | 1000 ms |
-| 3 | 8x K (knee) | `STAND_TUCK_US` = +100 (toward body - unverified sign) | 1000 ms |
+| 3 | 8x K (knee) | `STAND_TUCK_US` = -100 (toward body; +100 moved them outward) | 1000 ms |
 | 4 | 8x Y (lift) | `STAND_PUSH_US` = -100 (down - lifts the body) | 1500 ms |
 
 500 ms pause between steps. `stand step` waits for Enter before each step (`q` stops) - use it for the
 first runs to confirm each step moves the right way.
 
-If step 3 moves the knees **outward**, flip `STAND_TUCK_US` to -100 in `include/config.h`.
+Knee "toward the body" is the knee-DOWN direction in the dir convention (verified 2026-10-03).
 
 ## Sit - `sit`
 
