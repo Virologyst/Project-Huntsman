@@ -28,10 +28,10 @@ constexpr uint16_t BOOT_PACE_MS = 20;
 // Sequence: all joints centre -> all Y up -> all K tucked -> all Y down (lifts the body).
 constexpr int STAND_CENTER_US = 1500;
 constexpr int STAND_LIFT_US = 100;    // Y up before tucking knees
-constexpr int STAND_TUCK_US = -100;   // K toward the body (verified: + moved the knees outward)
+constexpr int STAND_TUCK_US = -300;   // K toward the body (verified: + moves the knees outward)
 constexpr int STAND_PUSH_US = -100;   // Y down: feet push the body off the ground
-constexpr uint16_t STAND_RAMP_MS = 1000;  // lift and tuck ramps
-constexpr uint16_t STAND_PUSH_MS = 1500;  // the loaded push, slower
+constexpr uint16_t STAND_RAMP_MS = 500;   // centre, lift and tuck ramps
+constexpr uint16_t STAND_PUSH_MS = 750;   // the loaded push, slower
 constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 

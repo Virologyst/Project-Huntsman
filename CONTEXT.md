@@ -61,7 +61,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
       wiggle has no leg-specific code, so likely the +/-50 us move was too small under load - watch for it.
 - [x] Flash map copied into `servo_map.cpp` DEFAULTS and docs/hardware.md (board 1 = left, board 2 = right)
 - [x] Motion module: ramps, `stand` / `stand step` / `sit` (docs/motion.md)
-- [ ] First stand-up / power-harness test with `stand step`; knee tuck sign fixed to -100 (+100 went outward); re-run  <- next
+- [x] First stand-up (2026-10-03): `stand step` lifted the body; power harness held with all 8 Y pushing at once.
+      Knee tuck sign is - (toward body). Tuned: tuck -100 -> -300, ramps halved (500 ms, push 750 ms)
+- [ ] Re-test stand with the tuned values  <- next
 - [ ] Then enable `BOOT_STAND` (user wants stand-up on boot)
 - [ ] Board clock calibration (`cal` / `calf`), then `save` - deferred: scope readout only gives 2 digits at
       the default timebase (read 1.3 ms for a 1500 us command); zoom in, use cursors, or use `calf`
