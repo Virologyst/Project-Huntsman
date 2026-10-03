@@ -77,8 +77,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
 - [ ] Commit calibrated map back into `servo_map.cpp` (`export`)
 - [ ] Leg geometry (segment lengths) -> inverse kinematics
-- [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right`. `walk 2` works with no leg
-      contact after the middle-leg trims. back/turn not yet tested.
+- [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right`. All patterns tested OK on the
+      floor (walk/back/turn) with the middle-leg trims.
+- [x] Walk pose (user: too slow, maximise foot travel): middle legs reach out (knee -100), corners spread
+      toward head/tail (X 150, knee -200), stride 150. Stand/sit unchanged. Untested.
 - [ ] IK-based gait; wave gait for heavy loads
 - [x] Wi-Fi: OTA uploads (`pio run -e wifi -t upload`) + console on huntsman.local:23, credentials in
       git-ignored include/secrets.h (docs/wifi.md). Connected 2026-10-03 as huntsman.local (192.168.0.108)

@@ -39,11 +39,17 @@ constexpr uint16_t STAND_PUSH_MS = 750;   // the loaded push, slower
 constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 
-// ---------- Walking (joint-space alternating tetrapod, from the stand pose) ----------
-// Group A = FL BML FMR BR, group B = FML BL FR BMR. Each half-cycle: swing group lifts, swings X to
-// +stride while the stance group pushes X to -stride, then lowers.
-constexpr int WALK_LIFT_US = 150;        // Y up from the stand pose while swinging
-constexpr int WALK_STRIDE_US = 120;      // X each way from centre (+ = forward); ~16 deg
+// ---------- Walking (joint-space alternating tetrapod) ----------
+// Group A = FL BML FMR BR, group B = FML BL FR BMR. A walk starts by moving each group from the stand
+// pose into the walk pose (lift, place, lower) and ends by returning to the stand pose. Each half-cycle:
+// swing group lifts, swings X to base + stride while the stance group pushes X to base - stride, lowers.
+// Walk pose (offsets from neutral, + = knee up / swing forward):
+constexpr int WALK_MID_KNEE_US = -100;      // middle legs: knee out from the stand's -300 -> feet reach out
+constexpr int WALK_CORNER_KNEE_US = -200;   // corner legs: straightened a little from -300
+constexpr int WALK_CORNER_SPREAD_US = 150;  // corner X base: front legs toward head, back legs toward tail
+constexpr int WALK_LIFT_US = 150;           // Y up from the stand pose while swinging
+constexpr int WALK_STRIDE_MID_US = 150;     // middle legs X each way from base (~20 deg)
+constexpr int WALK_STRIDE_CORNER_US = 150;  // corner legs X each way from base
 constexpr uint16_t WALK_LIFT_MS = 200;   // lift and lower
 constexpr uint16_t WALK_SWING_MS = 400;  // swing / push
 

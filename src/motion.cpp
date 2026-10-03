@@ -76,13 +76,24 @@ int strideSign(const char *leg, motion::Gait g) {
     return 0;
 }
 
-// Swing group: lift, swing to +stride while the stance group pushes to -stride, lower
+// Corner legs (FL FR BL BR) have 2-letter names; middle legs (FML FMR BML BMR) have 3
+bool isCorner(const char *leg) { return strlen(leg) == 2; }
+
+// Walk pose per leg: corners swing toward head / tail and straighten a little; middle legs reach out
+int walkBaseX(const char *leg) {
+    if (!isCorner(leg)) return 0;
+    return leg[0] == 'F' ? cfg::WALK_CORNER_SPREAD_US : -cfg::WALK_CORNER_SPREAD_US;
+}
+int walkKnee(const char *leg) { return isCorner(leg) ? cfg::WALK_CORNER_KNEE_US : cfg::WALK_MID_KNEE_US; }
+int walkStride(const char *leg) { return isCorner(leg) ? cfg::WALK_STRIDE_CORNER_US : cfg::WALK_STRIDE_MID_US; }
+
+// Swing group: lift, swing to base + stride while the stance group pushes to base - stride, lower
 void halfCycle(const char *const swing[], const char *const stance[], motion::Gait g) {
     Pose lift, move, lower;
     for (int k = 0; k < 4; k++) {
         lift.add(swing[k], 'Y', cfg::STAND_PUSH_US + cfg::WALK_LIFT_US);
-        move.add(swing[k], 'X', cfg::WALK_STRIDE_US * strideSign(swing[k], g));
-        move.add(stance[k], 'X', -cfg::WALK_STRIDE_US * strideSign(stance[k], g));
+        move.add(swing[k], 'X', walkBaseX(swing[k]) + walkStride(swing[k]) * strideSign(swing[k], g));
+        move.add(stance[k], 'X', walkBaseX(stance[k]) - walkStride(stance[k]) * strideSign(stance[k], g));
         lower.add(swing[k], 'Y', cfg::STAND_PUSH_US);
     }
     lift.run(cfg::WALK_LIFT_MS);
@@ -90,16 +101,17 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
     lower.run(cfg::WALK_LIFT_MS);
 }
 
-// Bring each group's swing back to centre, one group at a time, ending in the stand pose
-void recentre(const char *const group[]) {
-    Pose lift, centre, lower;
+// Lift one group, move its X and K to the given pose, lower it (feet never drag)
+void placeGroup(const char *const group[], bool walkPose) {
+    Pose lift, place, lower;
     for (int k = 0; k < 4; k++) {
         lift.add(group[k], 'Y', cfg::STAND_PUSH_US + cfg::WALK_LIFT_US);
-        centre.add(group[k], 'X', 0);
+        place.add(group[k], 'X', walkPose ? walkBaseX(group[k]) : 0);
+        place.add(group[k], 'K', walkPose ? walkKnee(group[k]) : cfg::STAND_TUCK_US);
         lower.add(group[k], 'Y', cfg::STAND_PUSH_US);
     }
     lift.run(cfg::WALK_LIFT_MS);
-    centre.run(cfg::WALK_SWING_MS / 2);
+    place.run(cfg::WALK_SWING_MS);
     lower.run(cfg::WALK_LIFT_MS);
 }
 
@@ -182,7 +194,9 @@ bool walk(Gait g, int cycles) {
     if (cycles) Term.printf(", %d cycles", cycles);
     Term.println(" - any key stops after the current step.");
 
-    bool stop = false;
+    placeGroup(GROUP_A, true);  // into the walk pose, one group at a time
+    placeGroup(GROUP_B, true);
+    bool stop = keyPressed();
     for (int c = 0; !stop && (cycles == 0 || c < cycles); c++) {
         halfCycle(GROUP_A, GROUP_B, g);
         stop = keyPressed();
@@ -190,8 +204,8 @@ bool walk(Gait g, int cycles) {
         halfCycle(GROUP_B, GROUP_A, g);
         stop = keyPressed();
     }
-    recentre(GROUP_A);
-    recentre(GROUP_B);
+    placeGroup(GROUP_A, false);  // back to the stand pose
+    placeGroup(GROUP_B, false);
     Term.println("Stopped - standing.");
     return true;
 }

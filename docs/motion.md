@@ -29,28 +29,42 @@ Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 m
 
 ## Walk - `walk`, `back`, `turn left|right`
 
-Joint-space **alternating tetrapod** from the stand pose (no inverse kinematics yet):
+Joint-space **alternating tetrapod** (no inverse kinematics yet):
 
 - Group A = **FL, BML, FMR, BR**; group B = **FML, BL, FR, BMR** - alternating along each side and across,
   so 4 legs are always on the ground.
+- **Walk pose.** A walk starts from the stand pose and moves each group (lift, place, lower - feet never
+  drag) into a wider, lower walk pose; when it stops it returns the same way to the stand pose. Stand and
+  sit are unchanged.
+  - Middle legs (FML FMR BML BMR): knee out to `WALK_MID_KNEE_US` = -100 (stand is -300), feet reach
+    out so each swing covers more ground.
+  - Corner legs (FL FR BL BR): X base `WALK_CORNER_SPREAD_US` = 150 toward the head (front pair) / tail
+    (back pair), knee `WALK_CORNER_KNEE_US` = -200 - they reach and pull at the front, push at the back.
+  - The body sits lower in the walk pose (expected).
 - Half-cycle: swing group **lifts** (Y +`WALK_LIFT_US` above the stand pose, 200 ms), **swings** X to
-  +`WALK_STRIDE_US` while the stance group **pushes** X to -`WALK_STRIDE_US` (400 ms), then **lowers**
-  (200 ms). Then the groups swap.
+  base + stride while the stance group **pushes** X to base - stride (400 ms), then **lowers** (200 ms).
 - Direction comes from each X joint's dir (+ = forward). `back` reverses all; `turn left` swings left legs
   back and right legs forward; `turn right` the opposite.
-- `walk 4` = 4 full cycles; `walk` alone = until a key. A key **finishes the current step** (never stops with
-  legs in the air), then each group lifts and recentres X, ending in the stand pose.
+- `walk 4` = 4 full cycles; `walk` alone = until Enter. Stopping **finishes the current step**, then returns
+  to the stand pose.
 - Requires the stand pose (Y and K exactly at stand values); otherwise it says to run `stand`.
 
 | Constant | Value | Meaning |
 |---|---|---|
+| `WALK_MID_KNEE_US` | -100 | middle-leg knee in the walk pose |
+| `WALK_CORNER_KNEE_US` | -200 | corner-leg knee in the walk pose |
+| `WALK_CORNER_SPREAD_US` | 150 | corner X base toward head / tail |
 | `WALK_LIFT_US` | 150 | Y up from the stand pose during swing |
-| `WALK_STRIDE_US` | 120 | X each way from centre (~16 deg) |
+| `WALK_STRIDE_MID_US` | 150 | middle-leg X each way from base (~20 deg) |
+| `WALK_STRIDE_CORNER_US` | 150 | corner-leg X each way from base |
 | `WALK_LIFT_MS` | 200 | lift / lower ramp |
 | `WALK_SWING_MS` | 400 | swing / push ramp |
 
-Joint-space swing moves the feet in arcs about each hip (front/back legs also slide sideways a little).
-Proper straight-line foot paths need IK and the leg segment lengths.
+Middle legs on each side are in opposite groups and swing toward each other every other step; the FML/FMR
+X trims give clearance. The longer stride (150, was 120) reduces it - watch FML/BML and FMR/BMR.
+
+Joint-space swing moves the feet in arcs about each hip. Straight-line foot paths need IK and the leg
+segment lengths.
 
 ## On boot
 
