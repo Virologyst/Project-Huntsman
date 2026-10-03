@@ -13,7 +13,7 @@ Also a power-harness test: each step moves one joint type on all 8 legs at once.
 | Step | Joints | Target (offset from neutral) | Ramp |
 |---|---|---|---|
 | 1 | all 24 | neutral | 500 ms |
-| 2 | 8x Y (lift) | `STAND_LIFT_US` = +100 (up) | 500 ms |
+| 2 | 8x Y (lift) | `STAND_LIFT_US` = +200 (up) | 500 ms |
 | 3 | 8x K (knee) | `STAND_TUCK_US` = -300 (toward body; + moves them outward) | 500 ms |
 | 4 | 8x Y (lift) | `STAND_PUSH_US` = -100 (down - lifts the body) | 750 ms |
 

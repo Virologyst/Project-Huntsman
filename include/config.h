@@ -31,7 +31,7 @@ constexpr uint16_t BOOT_PACE_MS = 20;
 // Offsets are from each joint's neutral (servo_map, 'setneutral') and follow its dir:
 // + = lift up, knee up, swing forward.
 // Sequence: all joints centre -> all Y up -> all K tucked -> all Y down (lifts the body).
-constexpr int STAND_LIFT_US = 100;    // Y up before tucking knees
+constexpr int STAND_LIFT_US = 200;    // Y up before tucking knees (doubled from 100)
 constexpr int STAND_TUCK_US = -300;   // K toward the body (verified: + moves the knees outward)
 constexpr int STAND_PUSH_US = -100;   // Y down: feet push the body off the ground
 constexpr uint16_t STAND_RAMP_MS = 500;   // centre, lift and tuck ramps
