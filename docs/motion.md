@@ -2,7 +2,8 @@
 
 All motion uses the joint map (board/channel/dir from `wiggle`, stored in flash). Every offset is from
 the joint's **neutral** (its centre / trim) and follows its `dir`: **+ = lift up, knee up, swing forward**.
-Neutral is 1500 for every joint except **FML X = 1600** (trimmed 100 us forward). Trim any joint with
+Neutral is 1500 for every joint except **FML X = 1600** and **FMR X = 1400** (both 100 us forward - FMR's
+dir is -1). The trims keep the front-middle legs clear of the back-middle legs when walking. Trim any joint with
 `setneutral <leg> <joint> <us>` then `save`. Moves are linear ramps updated every 20 ms (one
 servo frame); all joints in a step move together. **Any key aborts a move and holds position.**
 

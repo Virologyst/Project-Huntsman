@@ -34,6 +34,8 @@ Raw TCP on port 23 - the same console as USB. Output goes to both; input is acce
 One network client at a time (a new connection replaces the old one).
 
 - CLion: PlatformIO Serial Monitor (default env `wifi`: `monitor_port = socket://huntsman.local:23`).
+  After an upload, wait until the robot has rebooted and stood (~10 s) - "Upload and Monitor" connects
+  too early and fails with `getaddrinfo failed`.
 - Command line: `pio device monitor -e wifi`
 
 Long-running commands (prompts in `wiggle`/`check`, walking) block the loop, so OTA uploads wait until they

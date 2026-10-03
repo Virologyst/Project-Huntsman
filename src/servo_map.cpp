@@ -10,7 +10,8 @@ namespace {
 
 // Default map. Board/channel and dir verified on the rebuilt robot with 'wiggle' (2026-10-03):
 // board 1 = left legs, board 2 = right legs. dir convention: + = lift up, knee up, swing forward.
-// neutral = centre for all motion (1500, FML X trimmed forward 2026-10-03). min/max are still the
+// neutral = centre for all motion (1500; FML X and FMR X trimmed 100 us forward 2026-10-03 so the middle
+// legs clear BML/BMR when walking). min/max are still the
 // Arduino UNO prototype values (ticks x 4.883 us, clamped to 500-2500) - UNVERIFIED.
 const Joint DEFAULTS[servos::COUNT] = {
     // leg    J   brd ch   min   max  neutral dir  wired
@@ -19,7 +20,7 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"FL",  'X', 1,  0,  977, 2500, 1500, +1, true},
     {"FML", 'K', 1,  5,  732, 2500, 1500, +1, true},
     {"FML", 'Y', 1,  3,  732, 2500, 1500, +1, true},
-    {"FML", 'X', 1,  4,  977, 2500, 1600, +1, true},  // trimmed 100 us forward
+    {"FML", 'X', 1,  4,  977, 2500, 1600, +1, true},  // trimmed 100 us forward - clears BML
     {"BML", 'K', 1, 11,  732, 2500, 1500, -1, true},
     {"BML", 'Y', 1,  9,  732, 2500, 1500, -1, true},
     {"BML", 'X', 1, 10,  977, 2500, 1500, +1, true},
@@ -31,7 +32,7 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"FR",  'X', 2, 14,  977, 2500, 1500, -1, true},
     {"FMR", 'K', 2, 10,  732, 2500, 1500, -1, true},
     {"FMR", 'Y', 2,  9,  732, 2500, 1500, -1, true},
-    {"FMR", 'X', 2, 11,  977, 2500, 1500, -1, true},
+    {"FMR", 'X', 2, 11,  977, 2500, 1400, -1, true},  // trimmed 100 us forward (dir -1) - clears BMR
     {"BMR", 'K', 2,  4,  732, 2500, 1500, +1, true},
     {"BMR", 'Y', 2,  6,  732, 2500, 1500, +1, true},
     {"BMR", 'X', 2,  5,  977, 2500, 1500, -1, true},
