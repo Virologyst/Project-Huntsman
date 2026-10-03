@@ -57,6 +57,13 @@ constexpr uint16_t WALK_SWING_MS = 400;  // swing / push
 constexpr bool BOOT_STAND = true;
 constexpr uint16_t BOOT_STAND_DELAY_MS = 3000;
 
+// ---------- Xbox controller (Bluetooth LE, docs/controller.md) ----------
+constexpr bool PAD_ENABLED = true;
+// "" = pair with the first Xbox controller found in pairing mode; or lock to one, e.g. "44:16:22:5e:b2:d4"
+constexpr const char *PAD_ADDRESS = "";
+constexpr float PAD_DEADZONE = 0.5f;   // stick must pass half travel to start walking
+constexpr int PAD_STICK_Y_SIGN = 1;    // set to -1 if stick-forward walks backward ('pad' shows y)
+
 // Absolute pulse limits for any output, regardless of joint calibration
 constexpr int HARD_MIN_US = 400;
 constexpr int HARD_MAX_US = 2600;

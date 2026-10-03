@@ -2,7 +2,8 @@
 // Brain Box: ESP32-S3 + 2x PCA9685 (board 1 = 0x40 left legs, board 2 = 0x41 right legs)
 //
 // Current firmware: calibration console. On boot every output goes to cfg::BOOT_PULSE_US, then the
-// robot stands up if cfg::BOOT_STAND (any key cancels). Console on USB and Wi-Fi (net.h).
+// robot stands up if cfg::BOOT_STAND (any key cancels). Console on USB and Wi-Fi (net.h);
+// Xbox controller over BLE drives stand / sit / walk (pad.h).
 // See docs/calibration.md, docs/motion.md and docs/wifi.md.
 
 #include <Arduino.h>
@@ -11,6 +12,7 @@
 #include "console.h"
 #include "motion.h"
 #include "net.h"
+#include "pad.h"
 #include "pwm.h"
 #include "servo_map.h"
 #include "term.h"
@@ -18,6 +20,7 @@
 void setup() {
     Serial.begin(cfg::SERIAL_BAUD);
     net::begin();  // connects in the background
+    pad::begin();  // scans for the Xbox controller in the background
     delay(1500);
 
     pwm::begin();
@@ -60,5 +63,6 @@ void setup() {
 
 void loop() {
     net::handle();
+    pad::handle();
     console::poll();
 }

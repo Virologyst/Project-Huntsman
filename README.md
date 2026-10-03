@@ -7,6 +7,7 @@ Firmware for an 8-legged, load-carrying spider robot: ESP32-S3 + 2x PCA9685 driv
 - **Calibration console and procedures:** [docs/calibration.md](docs/calibration.md)
 - **Motion (stand / sit / walk):** [docs/motion.md](docs/motion.md)
 - **Wi-Fi uploads and console:** [docs/wifi.md](docs/wifi.md)
+- **Xbox controller:** [docs/controller.md](docs/controller.md)
 
 ## Current firmware
 
@@ -46,6 +47,9 @@ pio device monitor -e wifi
 
 Wi-Fi credentials go in `include/secrets.h` (git-ignored) - copy `include/secrets.example.h`.
 
+The controller build uses a larger app partition (`min_spiffs.csv`), so the **first upload after switching
+to it must be over USB**; Wi-Fi uploads work again afterwards.
+
 ## Layout
 
 ```
@@ -56,6 +60,7 @@ include/motion.h       ramps, stand / sit sequences                    (src/moti
 include/console.h      command console                                 (src/console.cpp)
 include/term.h         console I/O on USB + Wi-Fi at once              (src/term.cpp)
 include/net.h          Wi-Fi, OTA uploads, network console             (src/net.cpp)
+include/pad.h          Xbox controller over BLE: stand / sit / walk    (src/pad.cpp)
 include/secrets.h      Wi-Fi credentials - git-ignored (template: secrets.example.h)
 src/main.cpp           setup/loop
 docs/                  hardware, calibration, motion and Wi-Fi docs

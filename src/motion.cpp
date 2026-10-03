@@ -183,7 +183,7 @@ bool isStanding() {
     return true;
 }
 
-bool walk(Gait g, int cycles) {
+bool walk(Gait g, int cycles, bool (*keepGoing)()) {
     if (!isStanding()) {
         Term.println("Not in the stand pose - run 'stand' first.");
         return false;
@@ -192,17 +192,18 @@ bool walk(Gait g, int cycles) {
                      : g == Gait::TurnLeft ? "turn left" : "turn right";
     Term.printf("Walking %s", name);
     if (cycles) Term.printf(", %d cycles", cycles);
-    Term.println(" - any key stops after the current step.");
+    Term.println(keepGoing ? " - release (or any key) stops after the current step."
+                           : " - any key stops after the current step.");
 
     placeGroup(GROUP_A, true);  // into the walk pose, one group at a time
     placeGroup(GROUP_B, true);
-    bool stop = keyPressed();
+    bool stop = keyPressed() || (keepGoing && !keepGoing());
     for (int c = 0; !stop && (cycles == 0 || c < cycles); c++) {
         halfCycle(GROUP_A, GROUP_B, g);
-        stop = keyPressed();
+        stop = keyPressed() || (keepGoing && !keepGoing());
         if (stop) break;
         halfCycle(GROUP_B, GROUP_A, g);
-        stop = keyPressed();
+        stop = keyPressed() || (keepGoing && !keepGoing());
     }
     placeGroup(GROUP_A, false);  // back to the stand pose
     placeGroup(GROUP_B, false);

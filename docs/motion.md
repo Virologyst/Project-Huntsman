@@ -66,6 +66,11 @@ X trims give clearance. The longer stride (150, was 120) reduces it - watch FML/
 Joint-space swing moves the feet in arcs about each hip. Straight-line foot paths need IK and the leg
 segment lengths.
 
+## Xbox controller
+
+`walk` also takes an optional keep-going check: the controller (docs/controller.md) walks while the stick
+or D-pad is held and stops the same way a key does - the current step finishes, then the legs go back to the stand pose.
+
 ## On boot
 
 `BOOT_PULSE_US` (1500) on all 32 outputs, then if `BOOT_STAND` is true: 3 s countdown (any key cancels)

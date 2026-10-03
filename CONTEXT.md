@@ -51,6 +51,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
   BML/BMR in the first `walk 2` - adjacent legs are in opposite tetrapod groups and swing toward each
   other). Map version 4 reset flash to the
   code defaults (same board/channel/dir as the wiggle run).
+- **Xbox controller over BLE, not Classic BT** - the ESP32-S3 has BLE only; Xbox Series / updated One
+  controllers speak BLE. Library: asukiaaa XboxSeriesXControllerESP32 (NimBLE, standard Arduino core),
+  chosen over Bluepad32 which needs its own core. Needs the `min_spiffs` partition (app grew past 1.25 MB).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
 ## Current status
@@ -86,10 +89,13 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
       git-ignored include/secrets.h (docs/wifi.md). Connected 2026-10-03 as huntsman.local (192.168.0.108)
       after fitting the U.FL antenna and turning off router Smart Connect (band steering); console tested,
       OTA upload tested OK 2026-10-03 (sit -> flash -> reboot -> stand)
+- [ ] Xbox controller over BLE (branch `feature/xbox-controller`, docs/controller.md): A stand, B sit,
+      left stick / D-pad walk and turn while held. Written, not yet built or tested on the robot
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 
 ## Open questions
 
+- Does Wi-Fi + BLE coexistence stay stable while walking (console lag, controller drops)?
 - Module flash/PSRAM code (N8 / N16R8 ...) - project assumes N8, no PSRAM.
 - Servos are fed 8.5 V; confirm their rated max (the reference 55 kg listing said 7.4 V HV).
 - Signal level is 3.3 V from the PCA boards - confirm the servos respond reliably.
