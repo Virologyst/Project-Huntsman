@@ -11,7 +11,7 @@ PlatformIO env **`wifi`** (in `platformio.ini`) uploads with `espota` to `huntsm
 
 - **`wifi` is the default environment** (`default_envs` in platformio.ini), so CLion's normal
   Tools > PlatformIO > Upload and Serial Monitor go over Wi-Fi.
-- For USB (recovery, or if Wi-Fi firmware is broken): set `default_envs = esp32-s3-devkitc-1`, then
+- For USB (recovery, or if Wi-Fi firmware is broken): set `default_envs = usb`, then
   Tools > PlatformIO > Reload PlatformIO Project.
 - Command line: `pio run -e wifi -t upload`
 

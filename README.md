@@ -25,11 +25,11 @@ Close the serial monitor before uploading, or the COM port is busy.
 Command line:
 
 ```bash
-pio run -e esp32-s3-devkitc-1 -t upload --upload-port COM4
+pio run -e usb -t upload --upload-port COM4
 ```
 
 ```bash
-pio device monitor -e esp32-s3-devkitc-1 -p COM4
+pio device monitor -e usb -p COM4
 ```
 
 If an upload won't start: hold **BOOT**, tap **RST**, release BOOT, retry.

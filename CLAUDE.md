@@ -20,7 +20,7 @@ PlatformIO Core is at `%USERPROFILE%\.platformio\penv\Scripts\pio.exe` (user run
 ```bash
 pio run                                  # build (default env = wifi)
 pio run -e wifi -t upload                # upload over Wi-Fi to huntsman.local (normal; docs/wifi.md)
-pio run -e esp32-s3-devkitc-1 -t upload --upload-port COM4   # USB upload (recovery; fails if a monitor holds COM4)
+pio run -e usb -t upload --upload-port COM4   # USB upload (recovery; fails if a monitor holds COM4)
 ```
 
 Console output goes through `Term` (term.h: USB + Wi-Fi), not `Serial` - use `Term.print*` in new code.
