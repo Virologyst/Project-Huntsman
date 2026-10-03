@@ -9,7 +9,10 @@ On connect the console prints: `Wi-Fi connected: huntsman.local (<ip>), console 
 
 PlatformIO env **`wifi`** (in `platformio.ini`) uploads with `espota` to `huntsman.local`.
 
-- CLion: pick the **wifi** environment in the PlatformIO tool window, then Upload.
+- **`wifi` is the default environment** (`default_envs` in platformio.ini), so CLion's normal
+  Tools > PlatformIO > Upload and Serial Monitor go over Wi-Fi.
+- For USB (recovery, or if Wi-Fi firmware is broken): set `default_envs = esp32-s3-devkitc-1`, then
+  Tools > PlatformIO > Reload PlatformIO Project.
 - Command line: `pio run -e wifi -t upload`
 
 The first Wi-Fi-capable firmware must go on over USB. After that, every build includes OTA, so Wi-Fi uploads
@@ -27,7 +30,7 @@ first connection only worked after fitting the antenna and turning off the route
 Raw TCP on port 23 - the same console as USB. Output goes to both; input is accepted from either.
 One network client at a time (a new connection replaces the old one).
 
-- CLion: **wifi** environment, then PlatformIO Serial Monitor (`monitor_port = socket://huntsman.local:23`).
+- CLion: PlatformIO Serial Monitor (default env `wifi`: `monitor_port = socket://huntsman.local:23`).
 - Command line: `pio device monitor -e wifi`
 
 Long-running commands (prompts in `wiggle`/`check`, walking) block the loop, so OTA uploads wait until they

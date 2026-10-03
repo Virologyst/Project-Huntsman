@@ -18,9 +18,9 @@ project status, update in the same change:
 PlatformIO Core is at `%USERPROFILE%\.platformio\penv\Scripts\pio.exe` (user runs CLion 2026 + PlatformIO plugin).
 
 ```bash
-pio run                                  # build
-pio run -t upload --upload-port COM4     # upload over USB (fails if a serial monitor has COM4 open)
-pio run -e wifi -t upload                # upload over Wi-Fi to huntsman.local (docs/wifi.md)
+pio run                                  # build (default env = wifi)
+pio run -e wifi -t upload                # upload over Wi-Fi to huntsman.local (normal; docs/wifi.md)
+pio run -e esp32-s3-devkitc-1 -t upload --upload-port COM4   # USB upload (recovery; fails if a monitor holds COM4)
 ```
 
 Console output goes through `Term` (term.h: USB + Wi-Fi), not `Serial` - use `Term.print*` in new code.

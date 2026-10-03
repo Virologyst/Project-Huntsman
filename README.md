@@ -25,16 +25,16 @@ Close the serial monitor before uploading, or the COM port is busy.
 Command line:
 
 ```bash
-pio run -t upload --upload-port COM4
+pio run -e esp32-s3-devkitc-1 -t upload --upload-port COM4
 ```
 
 ```bash
-pio device monitor -p COM4 -b 115200
+pio device monitor -e esp32-s3-devkitc-1 -p COM4
 ```
 
 If an upload won't start: hold **BOOT**, tap **RST**, release BOOT, retry.
 
-**Over Wi-Fi** (after one USB upload of the Wi-Fi firmware): select the `wifi` environment in CLion, or
+**Over Wi-Fi** is the default (`default_envs = wifi`): CLion's Upload and Serial Monitor use it. Command line:
 
 ```bash
 pio run -e wifi -t upload
