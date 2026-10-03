@@ -78,7 +78,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right` (untested on hardware)
 - [ ] IK-based gait; wave gait for heavy loads
 - [x] Wi-Fi: OTA uploads (`pio run -e wifi -t upload`) + console on huntsman.local:23, credentials in
-      git-ignored include/secrets.h (docs/wifi.md) - built, NOT yet uploaded/tested (needs one USB upload)
+      git-ignored include/secrets.h (docs/wifi.md). Connected 2026-10-03 as huntsman.local (192.168.0.108)
+      after fitting the U.FL antenna and turning off router Smart Connect (band steering); console tested,
+      OTA upload not yet tested
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 
 ## Open questions
@@ -91,9 +93,7 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 1. First walk test: legs in the air on the stand (`walk 2`), then on the floor; tune `WALK_*`.
 2. Leg segment lengths (coxa, femur, tibia) -> IK -> straight-line foot paths, body height/tilt control.
-3. Wi-Fi: first upload (2026-10-03, via native USB COM5) - robot did NOT appear on the network
-   (huntsman.local unresolved, no port 23 on 192.168.0.0/24). Added status messages; read them on the
-   UART port (COM4). Check: antenna fitted, VNet has 2.4 GHz.
+3. Test an OTA upload (`pio run -e wifi -t upload`): should sit, flash, reboot, stand.
 - Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
 
 Procedures in [docs/calibration.md](docs/calibration.md) and [docs/motion.md](docs/motion.md).

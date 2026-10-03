@@ -27,7 +27,7 @@ void setup() {
     for (int b = 1; b <= cfg::BOARD_COUNT; b++)
         Term.printf("Board %d (0x%02X): %s, osc %lu Hz\n", b, cfg::BOARD_ADDR[b - 1],
                     pwm::boardFound(b) ? "OK" : "NOT FOUND", (unsigned long)pwm::osc(b));
-    Term.println(saved ? "Joint map: loaded from flash" : "Joint map: prototype defaults (UNVERIFIED)");
+    Term.println(saved ? "Joint map: loaded from flash" : "Joint map: code defaults (servo_map.cpp)");
 
     if (cfg::BOOT_PULSE_US) {
         for (int b = 1; b <= cfg::BOARD_COUNT; b++) {

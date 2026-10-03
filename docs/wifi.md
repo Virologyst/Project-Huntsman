@@ -18,6 +18,10 @@ reboots and (with `BOOT_STAND`) stands up again.
 
 If `huntsman.local` doesn't resolve, use the IP address printed at boot in `upload_port`.
 
+Troubleshooting: the console prints Wi-Fi status (not found / failed / lost) on the UART port. The
+first connection only worked after fitting the antenna and turning off the router's Smart Connect
+(2.4/5 GHz band steering) so the ESP32 sees a 2.4 GHz VNet.
+
 ## Console over Wi-Fi
 
 Raw TCP on port 23 - the same console as USB. Output goes to both; input is accepted from either.
