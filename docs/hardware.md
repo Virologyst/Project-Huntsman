@@ -40,26 +40,26 @@ The S3 has no fixed I2C pins - 8/9 are the Arduino-core defaults.
 
 | Address | Device |
 |---|---|
-| 0x40 | Board 1 - back legs |
-| 0x41 | Board 2 - front legs (A0 bridged) |
+| 0x40 | Board 1 - left legs |
+| 0x41 | Board 2 - right legs (A0 bridged) |
 | 0x70 | PCA9685 all-call (every board answers; normal) |
 
 ## Channel map
 
-From the Arduino UNO prototype. The robot is a **full rebuild**, so this is likely to have changed - verify
-with the harness check (`ident` / `which`, see calibration.md) and correct with `assign`. The live map is in
-ESP32 flash (`map`); update this table from `export` once verified.
-Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
+Verified on the rebuilt robot with `wiggle` (2026-10-03); matches `DEFAULTS` in `src/servo_map.cpp`.
+The live map is in ESP32 flash (`map`). Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
+Dir: + = lift up, knee up, swing forward.
 
-| Leg | Board | K | Y | X | Dir |
-|---|---|---|---|---|---|
-| FL  | 2 (0x41) | 4  | 5  | 6  | -1 |
-| FML | 2 (0x41) | 0  | 1  | 2  | -1 |
-| FR  | 2 (0x41) | 9  | 10 | 11 | +1 |
-| FMR | 2 (0x41) | 13 | 14 | 15 | +1 |
-| BL  | 1 (0x40) | 9  | 10 | 11 | +1 |
-| BML | 1 (0x40) | 13 | 14 | 15 | +1 |
-| BR  | 1 (0x40) | 0  | 1  | 2  | -1 |
-| BMR | 1 (0x40) | 4  | 5  | 6  | -1 |
+| Leg | Board | K (ch / dir) | Y (ch / dir) | X (ch / dir) |
+|---|---|---|---|---|
+| FL  | 1 (0x40) | 2 / -1  | 1 / -1  | 0 / +1  |
+| FML | 1 (0x40) | 5 / +1  | 3 / +1  | 4 / +1  |
+| BML | 1 (0x40) | 11 / -1 | 9 / -1  | 10 / +1 |
+| BL  | 1 (0x40) | 12 / +1 | 14 / +1 | 13 / +1 |
+| FR  | 2 (0x41) | 13 / +1 | 15 / +1 | 14 / -1 |
+| FMR | 2 (0x41) | 10 / -1 | 9 / -1  | 11 / -1 |
+| BMR | 2 (0x41) | 4 / +1  | 6 / +1  | 5 / -1  |
+| BR  | 2 (0x41) | 1 / -1  | 0 / -1  | 2 / -1  |
 
-Unused channels on each board: 3, 7, 8, 12.
+Unused channels: board 1 - 6, 7, 8, 15; board 2 - 3, 7, 8, 12.
+K/Y/X order within a leg's channels is not consistent (e.g. FL is X,Y,K on 0,1,2) - always go by the map.

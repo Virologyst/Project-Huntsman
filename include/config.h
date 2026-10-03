@@ -11,7 +11,7 @@ constexpr uint32_t SERIAL_BAUD = 115200;
 constexpr uint8_t SDA_PIN = 8;
 constexpr uint8_t SCL_PIN = 9;
 
-// Board numbers match the prototype: board 1 = 0x40 (back legs), board 2 = 0x41 (front legs)
+// Board 1 = 0x40 (left legs), board 2 = 0x41 (right legs) on the rebuilt robot
 constexpr int BOARD_COUNT = 2;
 constexpr uint8_t BOARD_ADDR[BOARD_COUNT] = {0x40, 0x41};
 

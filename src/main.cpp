@@ -1,5 +1,5 @@
 // Huntsman - 8-legged spider robot
-// Brain Box: ESP32-S3 + 2x PCA9685 (board 1 = 0x40 back legs, board 2 = 0x41 front legs)
+// Brain Box: ESP32-S3 + 2x PCA9685 (board 1 = 0x40 left legs, board 2 = 0x41 right legs)
 //
 // Current firmware: calibration console. On boot every output goes to cfg::BOOT_PULSE_US
 // (0 = boot with outputs off). See docs/calibration.md.

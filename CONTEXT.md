@@ -18,8 +18,8 @@ This is the second build; the first prototype ran on an Arduino UNO (its servo m
 | Controller | ESP32-S3-WROOM-1U dev board (external-antenna module; needs a U.FL 2.4 GHz antenna for Wi-Fi/BT) |
 | USB | CH340K USB-serial on the UART port, enumerates as **COM4** on the dev PC |
 | PWM | 2x PCA9685 16-ch boards on I2C: SDA = GPIO8, SCL = GPIO9 |
-| Board 1 | `0x40` - back legs (BL, BML, BR, BMR) |
-| Board 2 | `0x41` (A0 bridged) - front legs (FL, FML, FR, FMR) |
+| Board 1 | `0x40` - left legs (FL, FML, BML, BL) |
+| Board 2 | `0x41` (A0 bridged) - right legs (FR, FMR, BMR, BR) |
 | Servos | 24x ~55 kg brushless HV servos (270 deg, 0.5-2.5 ms), fed 8.5 V directly |
 | Brain Box | Enclosure with the ESP32 + both PCA boards; Dupont connectors to the chassis |
 | Power | 8.5 V feed into Brain Box -> 5 V buck -> ESP32 `5V0` pin -> ESP32 3V3 -> PCA9685 VCC. Servos take 8.5 V directly, not through the PCA boards |
@@ -59,7 +59,7 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] All legs connected, full `wiggle` run done and saved in flash (2026-10-03) - all 24 joints mapped with
       channel + direction. FML K didn't visibly move during its wiggle and was mapped afterwards by hand;
       wiggle has no leg-specific code, so likely the +/-50 us move was too small under load - watch for it.
-- [ ] Copy the flash map into `servo_map.cpp` DEFAULTS (`export`) so it's in git
+- [x] Flash map copied into `servo_map.cpp` DEFAULTS and docs/hardware.md (board 1 = left, board 2 = right)
 - [x] Motion module: ramps, `stand` / `stand step` / `sit` (docs/motion.md)
 - [ ] First stand-up / power-harness test with `stand step`; confirm knee tuck sign (`STAND_TUCK_US`)  <- next
 - [ ] Then enable `BOOT_STAND` (user wants stand-up on boot)
@@ -79,7 +79,7 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Next step
 
-1. `export` the flash map into `servo_map.cpp` and commit.
+1. (done) map in code.
 2. `stand step` on the stand: check each step's direction, watch the power harness under the Y-down push.
 3. Enable `BOOT_STAND`.
 4. Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
