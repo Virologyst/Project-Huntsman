@@ -21,7 +21,7 @@ All grounds common.
 - Never power the ESP32 from USB and the 5 V buck at the same time unless there is a diode in the buck
   line - many S3 boards join USB 5 V to `5V0` directly.
 - Servo current: ~0.1-0.3 A idle, 1-3 A holding load, 6-9 A stall each. Walking with load: 15-25 A total.
-- Source: Makita 18 V 5.0 Ah (~90 Wh), mounted off-centre (one side carries more load). Makita LXT packs rely on the tool for low-voltage cutoff, so an
+- Source: Makita 18 V 6 Ah (~108 Wh), mounted centrally. Makita LXT packs rely on the tool for low-voltage cutoff, so an
   external cutoff (~15 V) or ESP32 monitoring + disconnect is required.
 
 ## ESP32-S3 pins

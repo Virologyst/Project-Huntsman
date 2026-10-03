@@ -24,7 +24,7 @@ This is the second build; the first prototype ran on an Arduino UNO (its servo m
 | Servos | 24x ~55 kg brushless HV servos (270 deg, 0.5-2.5 ms), fed 8.5 V directly |
 | Brain Box | Enclosure with the ESP32 + both PCA boards; Dupont connectors to the chassis |
 | Power | 8.5 V feed into Brain Box -> 5 V buck -> ESP32 `5V0` pin -> ESP32 3V3 -> PCA9685 VCC. Servos take 8.5 V directly, not through the PCA boards |
-| Battery | Makita 18 V **5.0 Ah** (~90 Wh), mounted off-centre on one side; spare pack on hand. Needs low-voltage cutoff - Makita packs rely on the tool. A voltmeter display is fitted on the body |
+| Battery | Makita 18 V 6 Ah (~108 Wh), mounted centrally. Needs low-voltage cutoff - Makita packs rely on the tool |
 
 Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
