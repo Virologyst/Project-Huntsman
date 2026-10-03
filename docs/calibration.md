@@ -43,7 +43,8 @@ Joint moves are clamped to the joint's min/max. To explore beyond the current li
 | `calf 1 54.17` | Correct board 1 clock from the scope's frequency reading (more digits on most scopes) |
 | `osc 1 26500000` | Set board clock directly |
 | `freq 50` | Frame rate for both boards |
-| `status` | Clocks, frame rate, active outputs |
+| `status` | Clocks, frame rate, active outputs, Wi-Fi, controller, ToF |
+| `tof` | ToF range reading, obstacle band and `CLIMB` flag state (docs/motion.md) |
 
 ### Wiggle mapping (servos and legs connected)
 

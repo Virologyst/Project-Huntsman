@@ -1,9 +1,11 @@
 #include "motion.h"
 
 #include "config.h"
+#include "flags.h"
 #include "term.h"
 #include "pwm.h"
 #include "servo_map.h"
+#include "tof.h"
 
 namespace {
 
@@ -121,6 +123,12 @@ bool keyPressed() {
     return true;
 }
 
+// Between steps: a key, an obstacle (ToF raises flags::CLIMB - loop() then climbs) or the caller's check
+bool stopRequested(bool (*keepGoing)()) {
+    tof::handle();  // ramps block loop(), so sample here
+    return keyPressed() || flags::test(flags::CLIMB) || (keepGoing && !keepGoing());
+}
+
 }  // namespace
 
 namespace motion {
@@ -183,7 +191,7 @@ bool isStanding() {
     return true;
 }
 
-bool walk(Gait g, int cycles) {
+bool walk(Gait g, int cycles, bool (*keepGoing)()) {
     if (!isStanding()) {
         Term.println("Not in the stand pose - run 'stand' first.");
         return false;
@@ -192,21 +200,41 @@ bool walk(Gait g, int cycles) {
                      : g == Gait::TurnLeft ? "turn left" : "turn right";
     Term.printf("Walking %s", name);
     if (cycles) Term.printf(", %d cycles", cycles);
-    Term.println(" - any key stops after the current step.");
+    Term.println(keepGoing ? " - release (or any key) stops after the current step."
+                           : " - any key stops after the current step.");
 
     placeGroup(GROUP_A, true);  // into the walk pose, one group at a time
     placeGroup(GROUP_B, true);
-    bool stop = keyPressed();
+    bool stop = stopRequested(keepGoing);
     for (int c = 0; !stop && (cycles == 0 || c < cycles); c++) {
         halfCycle(GROUP_A, GROUP_B, g);
-        stop = keyPressed();
+        stop = stopRequested(keepGoing);
         if (stop) break;
         halfCycle(GROUP_B, GROUP_A, g);
-        stop = keyPressed();
+        stop = stopRequested(keepGoing);
     }
     placeGroup(GROUP_A, false);  // back to the stand pose
     placeGroup(GROUP_B, false);
-    Term.println("Stopped - standing.");
+    Term.println(flags::test(flags::CLIMB) ? "Stopped - obstacle ahead, standing." : "Stopped - standing.");
+    return true;
+}
+
+bool climb() {
+    if (!isStanding()) {
+        Term.println("Not in the stand pose - run 'stand' first.");
+        return false;
+    }
+    Term.printf("Climb (obstacle %d mm) - any key aborts and holds.\n", tof::distanceMm());
+
+    // TODO: climbing sequence. Building blocks (all in this file):
+    //   Pose p; p.add("FL", 'Y', offset); ... p.run(ms);   - one coordinated ramp, offsets from neutral,
+    //                                                         + = lift up / knee up / swing forward
+    //   placeGroup(GROUP_A, true/false)                     - lift, place, lower a tetrapod group
+    //   rampType('Y', offset, ms)                           - one joint type on all 8 legs
+    //   cfg::CLIMB_LIFT_US, cfg::CLIMB_RAMP_MS              - tuning constants (config.h)
+    // Must finish in the stand pose (isStanding() true) so walking can resume; return false if aborted.
+
+    Term.println("Climb sequence not written yet - standing.");
     return true;
 }
 

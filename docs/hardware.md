@@ -8,6 +8,7 @@
 | Antenna | WROOM-**1U** = U.FL connector, no PCB antenna. Fit a 2.4 GHz antenna before using Wi-Fi/BT; mount it away from servos and battery |
 | USB | UART port via CH340K (COM4 on the dev PC). The native "USB" port would need `-DARDUINO_USB_CDC_ON_BOOT=1` |
 | PWM | 2x PCA9685 16-channel, 12-bit (~4.9 us steps at 50 Hz) |
+| Range | VL53L0X time-of-flight, forward-facing at the front of the body, on the same I2C bus (0x29) |
 
 ## Power
 
@@ -27,8 +28,8 @@ All grounds common.
 
 | GPIO | Use |
 |---|---|
-| 8 | I2C SDA (both PCA9685) |
-| 9 | I2C SCL (both PCA9685) |
+| 8 | I2C SDA (both PCA9685 + VL53L0X) |
+| 9 | I2C SCL (both PCA9685 + VL53L0X) |
 | 3V3 | PCA9685 VCC (both boards), with GND - on the first two header pins per the user |
 | 4 | Optional future: PCA9685 OE (both boards) as a software kill. **Not wired** - OE floats low on the boards, so outputs are always enabled |
 | 1 or 2 | Planned: battery voltage divider (must be ADC1; ADC2 = GPIO11-20 is unusable with Wi-Fi on) |
@@ -43,6 +44,20 @@ The S3 has no fixed I2C pins - 8/9 are the Arduino-core defaults.
 | 0x40 | Board 1 - left legs |
 | 0x41 | Board 2 - right legs (A0 bridged) |
 | 0x70 | PCA9685 all-call (every board answers; normal) |
+| 0x29 | VL53L0X ToF range sensor |
+
+## ToF range sensor (VL53L0X)
+
+| Pin | To |
+|---|---|
+| VIN | ESP32 3V3 (board has its own regulator; 3.3 V or 5 V both fine) |
+| GND | GND |
+| SDA / SCL | GPIO 8 / 9, shared with the PCA boards (breakout has its own pull-ups) |
+| XSHUT, GPIO1 | not connected |
+
+Mounted at the front, pointing forward, roughly at obstacle height. Range ~1.2 m indoors, poor in direct
+sunlight; readings above `TOF_MAX_MM` (2000) count as "nothing in range". Below `TOF_CLIMB_MM` (300) it
+raises the `CLIMB` flag (docs/motion.md); `tof` on the console shows the live reading.
 
 ## Channel map
 

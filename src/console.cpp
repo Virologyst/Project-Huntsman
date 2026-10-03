@@ -6,8 +6,10 @@
 #include "term.h"
 #include "motion.h"
 #include "net.h"
+#include "pad.h"
 #include "pwm.h"
 #include "servo_map.h"
+#include "tof.h"
 
 namespace {
 
@@ -607,7 +609,11 @@ void handle(char *cmdLine) {
             Term.printf("Wi-Fi: %s.local (%s)\n", cfg::HOSTNAME, WiFi.localIP().toString().c_str());
         else
             Term.printf("Wi-Fi: not connected (status %d)\n", WiFi.status());
+        pad::printStatus();
+        tof::printStatus();
     }
+    else if (eq(c, "pad")) pad::printStatus();
+    else if (eq(c, "tof")) tof::printStatus();
     else if (eq(c, "map")) servos::printTable();
     else if (eq(c, "export")) servos::printExport();
     else if (eq(c, "all") || eq(c, "neutral")) { servos::allNeutral(); Term.println("All joints to neutral."); }
@@ -627,6 +633,7 @@ void handle(char *cmdLine) {
         else motion::walk(eq(tok[1], "left") ? motion::Gait::TurnLeft : motion::Gait::TurnRight,
                           n > 2 ? atoi(tok[2]) : 0);
     }
+    else if (eq(c, "climb")) motion::climb();
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
@@ -661,6 +668,10 @@ void printHelp() {
         "  sit                    lower the body, everything back to centre\n"
         "  walk [n] | back [n] | turn left|right [n]   tetrapod gait from the stand pose;\n"
         "                         n cycles or until a key (finishes the step, ends standing)\n"
+        "  climb                  climb the obstacle ahead (auto when the ToF reads < TOF_CLIMB_MM while standing)\n"
+        "  tof                    range sensor readout and CLIMB flag state\n"
+        "Xbox controller (docs/controller.md): A stand, B sit, left stick / D-pad walk + turn\n"
+        "  pad                    controller status, stick and button readout\n"
         "Joints (legs FL FML BML BL FR FMR BMR BR, joints K Y X):\n"
         "  FR X 1600              move to a pulse (clamped to joint min/max)\n"
         "  FR X +50 | FML Y-20    offset from neutral, direction-corrected\n"

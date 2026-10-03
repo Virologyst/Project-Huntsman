@@ -1,0 +1,45 @@
+# Xbox controller
+
+An Xbox Wireless Controller drives stand / sit / walk over **Bluetooth LE** (the ESP32-S3 has no Classic
+Bluetooth). Works with Xbox Series X|S controllers and Xbox One controllers on current firmware (BLE
+support); update an older controller in the Xbox Accessories app first. Code: `include/pad.h`,
+`src/pad.cpp`; settings: `cfg::PAD_*` in `include/config.h`.
+
+## Pairing
+
+1. Power the robot. The boot log says `Controller: scanning`.
+2. Turn the controller on and hold its **pair** button (top edge) until the Xbox logo flashes fast.
+3. The console prints `Controller connected (<address>)`.
+
+It reconnects automatically after a drop. To stop it pairing with a different controller in range, copy
+the address into `cfg::PAD_ADDRESS`.
+
+## Controls
+
+| Input | Action |
+|---|---|
+| **A** | stand (same as `stand`) |
+| **B** | sit (same as `sit`) |
+| Left stick / D-pad **up** | walk forward while held |
+| Left stick / D-pad **down** | walk back while held |
+| Left stick / D-pad **left / right** | turn left / right while held |
+
+- Walking only starts from the stand pose - press **A** first.
+- Releasing the stick, changing direction, or the controller disconnecting stops the walk the same way a
+  key does: the current step finishes, then the legs go back to the stand pose. A new direction
+  starts after that.
+- The stick must pass half travel (`PAD_DEADZONE` = 0.5); the larger axis wins. D-pad overrides the stick.
+- Stand and sit are still aborted by a console key, not the controller.
+
+## Console
+
+`pad` (also shown in `status`): connection, battery, left-stick x/y (-1..+1, + = right / forward), A, B,
+D-pad. If pushing the stick forward shows a negative y, set `PAD_STICK_Y_SIGN = -1`.
+
+## Build note
+
+Wi-Fi + OTA + BLE need more than the default 1.25 MB app slot, so `platformio.ini` uses
+`board_build.partitions = min_spiffs.csv` (1.9 MB app, OTA kept). **The first upload of this build must be
+over USB** (`pio run -e usb -t upload --upload-port COM4`) - OTA can't change the partition table.
+NVS (the calibration) sits at the same offset in both tables so it should survive, but run `export` and keep
+the output before flashing just in case.
