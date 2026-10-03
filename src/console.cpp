@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "motion.h"
 #include "pwm.h"
 #include "servo_map.h"
 
@@ -609,6 +610,8 @@ void handle(char *cmdLine) {
     else if (eq(c, "find")) cmdFind(tok, n);
     else if (eq(c, "check")) cmdCheck(tok, n);
     else if (eq(c, "wiggle")) cmdWiggle(tok, n);
+    else if (eq(c, "stand")) motion::standUp(n > 1 && eq(tok[1], "step"));
+    else if (eq(c, "sit")) motion::sitDown();
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
@@ -638,7 +641,10 @@ namespace console {
 
 void printHelp() {
     Serial.println(F(
-        "\nJoints (legs FL FML BML BL FR FMR BMR BR, joints K Y X):\n"
+        "\nMotion (any key aborts and holds):\n"
+        "  stand | stand step     centre -> Y up -> K tuck -> Y down (step = Enter before each step)\n"
+        "  sit                    lower the body, everything back to centre\n"
+        "Joints (legs FL FML BML BL FR FMR BMR BR, joints K Y X):\n"
         "  FR X 1600              move to a pulse (clamped to joint min/max)\n"
         "  FR X +50 | FML Y-20    offset from neutral, direction-corrected\n"
         "  FR X neutral | off     one joint;  FR neutral | FR off  whole leg;  FR  show leg\n"

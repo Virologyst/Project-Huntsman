@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "console.h"
+#include "motion.h"
 #include "pwm.h"
 #include "servo_map.h"
 
@@ -34,6 +35,18 @@ void setup() {
         Serial.printf("All 32 outputs at %d us. Type 'limp' to release. Type help.\n", cfg::BOOT_PULSE_US);
     } else {
         Serial.println("All outputs OFF. Type help.");
+    }
+
+    if (cfg::BOOT_STAND) {
+        Serial.printf("Standing up in %u ms - press any key to cancel.\n", cfg::BOOT_STAND_DELAY_MS);
+        uint32_t t = millis();
+        while (millis() - t < cfg::BOOT_STAND_DELAY_MS && !Serial.available()) delay(10);
+        if (Serial.available()) {
+            while (Serial.available()) Serial.read();
+            Serial.println("Stand cancelled.");
+        } else {
+            motion::standUp(false);
+        }
     }
     Serial.print("> ");
 }

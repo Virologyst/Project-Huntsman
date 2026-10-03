@@ -23,6 +23,22 @@ constexpr float DEFAULT_FRAME_HZ = 50.0f;      // standard servo frame rate
 constexpr int BOOT_PULSE_US = 1500;
 constexpr uint16_t BOOT_PACE_MS = 20;
 
+// ---------- Stand-up sequence ----------
+// Offsets are from STAND_CENTER_US and follow each joint's dir: + = lift up, knee up, swing forward.
+// Sequence: all joints centre -> all Y up -> all K tucked -> all Y down (lifts the body).
+constexpr int STAND_CENTER_US = 1500;
+constexpr int STAND_LIFT_US = 100;    // Y up before tucking knees
+constexpr int STAND_TUCK_US = 100;    // K toward the body - FLIP THE SIGN if the knees move outward
+constexpr int STAND_PUSH_US = -100;   // Y down: feet push the body off the ground
+constexpr uint16_t STAND_RAMP_MS = 1000;  // lift and tuck ramps
+constexpr uint16_t STAND_PUSH_MS = 1500;  // the loaded push, slower
+constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
+constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
+
+// Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
+constexpr bool BOOT_STAND = false;
+constexpr uint16_t BOOT_STAND_DELAY_MS = 3000;
+
 // Absolute pulse limits for any output, regardless of joint calibration
 constexpr int HARD_MIN_US = 400;
 constexpr int HARD_MAX_US = 2600;

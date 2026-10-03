@@ -5,6 +5,7 @@ Firmware for an 8-legged, load-carrying spider robot: ESP32-S3 + 2x PCA9685 driv
 - **Project context, decisions and status:** [CONTEXT.md](CONTEXT.md)
 - **Hardware, wiring and channel map:** [docs/hardware.md](docs/hardware.md)
 - **Calibration console and procedures:** [docs/calibration.md](docs/calibration.md)
+- **Motion (stand / sit):** [docs/motion.md](docs/motion.md)
 
 ## Current firmware
 
@@ -38,6 +39,7 @@ If an upload won't start: hold **BOOT**, tap **RST**, release BOOT, retry.
 include/config.h       pins, I2C addresses, hard pulse limits
 include/pwm.h          PCA9685 control, per-board clock calibration   (src/pwm.cpp)
 include/servo_map.h    leg/joint -> board/channel map + calibration   (src/servo_map.cpp)
+include/motion.h       ramps, stand / sit sequences                    (src/motion.cpp)
 include/console.h      serial command console                          (src/console.cpp)
 src/main.cpp           setup/loop
 docs/                  hardware and calibration docs
