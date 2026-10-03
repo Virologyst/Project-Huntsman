@@ -10,7 +10,7 @@ namespace {
 
 // Default map. Board/channel and dir verified on the rebuilt robot with 'wiggle' (2026-10-03):
 // board 1 = left legs, board 2 = right legs. dir convention: + = lift up, knee up, swing forward.
-// neutral = centre for all motion (1500; FML X +150 and FMR X +100 forward, 2026-10-03, so the middle
+// neutral = centre for all motion (1500; FML X and FMR X +150 forward, 2026-10-03, so the middle
 // legs clear BML/BMR when walking). min/max are still the
 // Arduino UNO prototype values (ticks x 4.883 us, clamped to 500-2500) - UNVERIFIED.
 const Joint DEFAULTS[servos::COUNT] = {
@@ -32,7 +32,7 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"FR",  'X', 2, 14,  977, 2500, 1500, -1, true},
     {"FMR", 'K', 2, 10,  732, 2500, 1500, -1, true},
     {"FMR", 'Y', 2,  9,  732, 2500, 1500, -1, true},
-    {"FMR", 'X', 2, 11,  977, 2500, 1400, -1, true},  // trimmed 100 us forward (dir -1) - clears BMR
+    {"FMR", 'X', 2, 11,  977, 2500, 1350, -1, true},  // trimmed 150 us forward (dir -1) - clears BMR
     {"BMR", 'K', 2,  4,  732, 2500, 1500, +1, true},
     {"BMR", 'Y', 2,  6,  732, 2500, 1500, +1, true},
     {"BMR", 'X', 2,  5,  977, 2500, 1500, -1, true},
@@ -49,7 +49,8 @@ struct Cal {
     uint8_t wired;
 } __attribute__((packed));
 
-constexpr uint8_t CAL_VERSION = 4;  // v2 board/channel, v3 wired, v4 = reset to wiggle-verified defaults
+constexpr uint8_t CAL_VERSION = 5;  // v2 board/channel, v3 wired, v4 = reset to wiggle-verified defaults,
+                                    // v5 = reset to defaults with FMR X trim 100 -> 150
 
 }  // namespace
 

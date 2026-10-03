@@ -47,9 +47,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - **Wi-Fi console mirrors USB** (`Term` in term.h) so the robot can be driven untethered; OTA sits the
   robot down before flashing. No OTA password - trusted home network (user's call).
 - **Motion is relative to each joint's neutral**, which doubles as its trim (`setneutral`). All 1500
-  except FML X = 1650 and FMR X = 1400 (150 / 100 forward; added after the middle legs clashed with
+  except FML X = 1650 and FMR X = 1350 (150 forward, FMR was 100; added after the middle legs clashed with
   BML/BMR in the first `walk 2` - adjacent legs are in opposite tetrapod groups and swing toward each
-  other). Map version 4 reset flash to the
+  other). Map version 5 resets flash to the
   code defaults (same board/channel/dir as the wiggle run).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
@@ -81,6 +81,14 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
       floor (walk/back/turn) with the middle-leg trims.
 - [x] Walk pose (user: too slow, maximise foot travel): middle legs reach out (knee -100), corners spread
       toward head/tail (X 150, knee -200), stride 150. Stand/sit unchanged. Untested.
+- [ ] Walk pose v2 (FMR/BMR touched; user: front legs must come together before walking): front legs
+      X 220 (~30 deg) toward the head, back-middle legs X 60 toward the tail, FMR X trim 100 -> 150
+      (map v5). Front legs then changed to hold X and stride with K + Y (reach straight out, pull in) for
+      walk/back - K/Y values guessed, need tuning or leg lengths; middle-leg knee -100 -> -50 for more
+      travel. Back legs mirror the front: X 220 toward the tail, held, push with K + Y (guessed values).
+      Front/back knee travel then doubled (K -300..-50 -> -300..+200, Y change 40 -> 80).
+      Front legs lift higher in the air (WALK_FRONT_LIFT_US 300; 150 left the feet touching).
+      Not yet flashed or tested.
 - [ ] IK-based gait; wave gait for heavy loads
 - [x] Wi-Fi: OTA uploads (`pio run -e wifi -t upload`) + console on huntsman.local:23, credentials in
       git-ignored include/secrets.h (docs/wifi.md). Connected 2026-10-03 as huntsman.local (192.168.0.108)
