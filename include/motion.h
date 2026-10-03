@@ -6,8 +6,8 @@
 namespace motion {
 
 // Ramp the listed joints from their current pulse to targets over ms, all together.
-// Any serial input aborts and holds position. Returns false if aborted.
-bool ramp(const int joints[], const int targets[], int count, uint16_t ms);
+// If abortable, any serial input aborts and holds position. Returns false if aborted.
+bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable = true);
 
 // Ramp one joint type ('K', 'Y', 'X') on all 8 legs to centre + offset * dir
 bool rampType(char type, int offsetUs, uint16_t ms);
@@ -20,5 +20,14 @@ bool standUp(bool stepMode);
 
 // Lower the body and return every joint to centre
 bool sitDown();
+
+// True when Y and K are at the stand pose (X may be anywhere)
+bool isStanding();
+
+enum class Gait { Forward, Back, TurnLeft, TurnRight };
+
+// Alternating tetrapod (see cfg::WALK_*). cycles = 0 walks until a key is pressed; a key always lets the
+// current step finish, then both groups recentre and the robot ends in the stand pose.
+bool walk(Gait g, int cycles);
 
 }  // namespace motion

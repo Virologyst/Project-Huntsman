@@ -35,6 +35,14 @@ constexpr uint16_t STAND_PUSH_MS = 750;   // the loaded push, slower
 constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 
+// ---------- Walking (joint-space alternating tetrapod, from the stand pose) ----------
+// Group A = FL BML FMR BR, group B = FML BL FR BMR. Each half-cycle: swing group lifts, swings X to
+// +stride while the stance group pushes X to -stride, then lowers.
+constexpr int WALK_LIFT_US = 150;        // Y up from the stand pose while swinging
+constexpr int WALK_STRIDE_US = 120;      // X each way from centre (+ = forward); ~16 deg
+constexpr uint16_t WALK_LIFT_MS = 200;   // lift and lower
+constexpr uint16_t WALK_SWING_MS = 400;  // swing / push
+
 // Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
 constexpr bool BOOT_STAND = true;
 constexpr uint16_t BOOT_STAND_DELAY_MS = 3000;

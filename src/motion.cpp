@@ -41,11 +41,78 @@ bool step(bool stepMode, const char *what, char type, int offsetUs, uint16_t ms)
     return true;
 }
 
+// ---------- walking: joint-space alternating tetrapod ----------
+
+// Alternate along each side and across, so 4 legs are always down
+const char *const GROUP_A[] = {"FL", "BML", "FMR", "BR"};
+const char *const GROUP_B[] = {"FML", "BL", "FR", "BMR"};
+
+bool isLeft(const char *leg) { return leg[strlen(leg) - 1] == 'L'; }
+
+// One coordinated ramp: joints and targets as offsets from centre, following each joint's dir
+struct Pose {
+    int joints[servos::COUNT];
+    int targets[servos::COUNT];
+    int n = 0;
+
+    void add(const char *leg, char type, int offsetUs) {
+        int i = servos::find(leg, type);
+        joints[n] = i;
+        targets[n] = cfg::STAND_CENTER_US + offsetUs * servos::joints[i].dir;
+        n++;
+    }
+    void run(uint16_t ms) { motion::ramp(joints, targets, n, ms, false); }  // a step always completes
+};
+
+// +1 = this leg's swing goes forward when walking this way
+int strideSign(const char *leg, motion::Gait g) {
+    switch (g) {
+        case motion::Gait::Forward: return +1;
+        case motion::Gait::Back: return -1;
+        case motion::Gait::TurnLeft: return isLeft(leg) ? -1 : +1;
+        case motion::Gait::TurnRight: return isLeft(leg) ? +1 : -1;
+    }
+    return 0;
+}
+
+// Swing group: lift, swing to +stride while the stance group pushes to -stride, lower
+void halfCycle(const char *const swing[], const char *const stance[], motion::Gait g) {
+    Pose lift, move, lower;
+    for (int k = 0; k < 4; k++) {
+        lift.add(swing[k], 'Y', cfg::STAND_PUSH_US + cfg::WALK_LIFT_US);
+        move.add(swing[k], 'X', cfg::WALK_STRIDE_US * strideSign(swing[k], g));
+        move.add(stance[k], 'X', -cfg::WALK_STRIDE_US * strideSign(stance[k], g));
+        lower.add(swing[k], 'Y', cfg::STAND_PUSH_US);
+    }
+    lift.run(cfg::WALK_LIFT_MS);
+    move.run(cfg::WALK_SWING_MS);
+    lower.run(cfg::WALK_LIFT_MS);
+}
+
+// Bring each group's swing back to centre, one group at a time, ending in the stand pose
+void recentre(const char *const group[]) {
+    Pose lift, centre, lower;
+    for (int k = 0; k < 4; k++) {
+        lift.add(group[k], 'Y', cfg::STAND_PUSH_US + cfg::WALK_LIFT_US);
+        centre.add(group[k], 'X', 0);
+        lower.add(group[k], 'Y', cfg::STAND_PUSH_US);
+    }
+    lift.run(cfg::WALK_LIFT_MS);
+    centre.run(cfg::WALK_SWING_MS / 2);
+    lower.run(cfg::WALK_LIFT_MS);
+}
+
+bool keyPressed() {
+    if (!Serial.available()) return false;
+    while (Serial.available()) Serial.read();
+    return true;
+}
+
 }  // namespace
 
 namespace motion {
 
-bool ramp(const int joints[], const int targets[], int count, uint16_t ms) {
+bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable) {
     int start[servos::COUNT];
     for (int k = 0; k < count; k++) {
         int now = servos::position(joints[k]);
@@ -56,7 +123,7 @@ bool ramp(const int joints[], const int targets[], int count, uint16_t ms) {
         uint32_t t = millis();
         for (int k = 0; k < count; k++)
             servos::moveRaw(joints[k], start[k] + (targets[k] - start[k]) * s / steps);
-        if (aborted()) return false;
+        if (abortable && aborted()) return false;
         while (millis() - t < cfg::FRAME_MS) {}
     }
     return true;
@@ -92,6 +159,40 @@ bool standUp(bool stepMode) {
            step(stepMode, "all K (knee) tuck toward body", 'K', cfg::STAND_TUCK_US, cfg::STAND_RAMP_MS) &&
            step(stepMode, "all Y (lift) DOWN - lifting the body", 'Y', cfg::STAND_PUSH_US, cfg::STAND_PUSH_MS) &&
            (Serial.println("Standing."), true);
+}
+
+bool isStanding() {
+    for (int i = 0; i < servos::COUNT; i++) {
+        const Joint &j = servos::joints[i];
+        int offset = j.type == 'Y' ? cfg::STAND_PUSH_US : j.type == 'K' ? cfg::STAND_TUCK_US : 0;
+        if (j.type != 'X' && servos::position(i) != cfg::STAND_CENTER_US + offset * j.dir) return false;
+    }
+    return true;
+}
+
+bool walk(Gait g, int cycles) {
+    if (!isStanding()) {
+        Serial.println("Not in the stand pose - run 'stand' first.");
+        return false;
+    }
+    const char *name = g == Gait::Forward ? "forward" : g == Gait::Back ? "back"
+                     : g == Gait::TurnLeft ? "turn left" : "turn right";
+    Serial.printf("Walking %s", name);
+    if (cycles) Serial.printf(", %d cycles", cycles);
+    Serial.println(" - any key stops after the current step.");
+
+    bool stop = false;
+    for (int c = 0; !stop && (cycles == 0 || c < cycles); c++) {
+        halfCycle(GROUP_A, GROUP_B, g);
+        stop = keyPressed();
+        if (stop) break;
+        halfCycle(GROUP_B, GROUP_A, g);
+        stop = keyPressed();
+    }
+    recentre(GROUP_A);
+    recentre(GROUP_B);
+    Serial.println("Stopped - standing.");
+    return true;
 }
 
 bool sitDown() {

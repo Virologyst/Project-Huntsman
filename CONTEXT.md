@@ -70,7 +70,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
 - [ ] Commit calibrated map back into `servo_map.cpp` (`export`)
 - [ ] Leg geometry (segment lengths) -> inverse kinematics
-- [ ] Gait (alternating tetrapod first, wave gait for heavy loads)
+- [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right` (untested on hardware)
+- [ ] IK-based gait; wave gait for heavy loads
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 
 ## Open questions
@@ -81,10 +82,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Next step
 
-Robot stands on boot. Candidates for what's next (user to choose):
-- Next motion: walking (leg geometry -> IK -> tetrapod gait), or simpler scripted moves first.
+1. First walk test: legs in the air on the stand (`walk 2`), then on the floor; tune `WALK_*`.
+2. Leg segment lengths (coxa, femur, tibia) -> IK -> straight-line foot paths, body height/tilt control.
+3. Wi-Fi: OTA uploads + serial console over Wi-Fi (not set up yet; needs the U.FL antenna and the user's
+   Wi-Fi credentials in a git-ignored secrets file).
 - Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
-- OTA firmware updates over Wi-Fi (ArduinoOTA / espota) - needs the U.FL antenna fitted and
-  Wi-Fi credentials in a git-ignored secrets file.
 
 Procedures in [docs/calibration.md](docs/calibration.md) and [docs/motion.md](docs/motion.md).

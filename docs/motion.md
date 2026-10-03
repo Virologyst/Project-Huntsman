@@ -24,6 +24,31 @@ Knee "toward the body" is the knee-DOWN direction in the dir convention (verifie
 
 Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 ms each).
 
+## Walk - `walk`, `back`, `turn left|right`
+
+Joint-space **alternating tetrapod** from the stand pose (no inverse kinematics yet):
+
+- Group A = **FL, BML, FMR, BR**; group B = **FML, BL, FR, BMR** - alternating along each side and across,
+  so 4 legs are always on the ground.
+- Half-cycle: swing group **lifts** (Y +`WALK_LIFT_US` above the stand pose, 200 ms), **swings** X to
+  +`WALK_STRIDE_US` while the stance group **pushes** X to -`WALK_STRIDE_US` (400 ms), then **lowers**
+  (200 ms). Then the groups swap.
+- Direction comes from each X joint's dir (+ = forward). `back` reverses all; `turn left` swings left legs
+  back and right legs forward; `turn right` the opposite.
+- `walk 4` = 4 full cycles; `walk` alone = until a key. A key **finishes the current step** (never stops with
+  legs in the air), then each group lifts and recentres X, ending in the stand pose.
+- Requires the stand pose (Y and K exactly at stand values); otherwise it says to run `stand`.
+
+| Constant | Value | Meaning |
+|---|---|---|
+| `WALK_LIFT_US` | 150 | Y up from the stand pose during swing |
+| `WALK_STRIDE_US` | 120 | X each way from centre (~16 deg) |
+| `WALK_LIFT_MS` | 200 | lift / lower ramp |
+| `WALK_SWING_MS` | 400 | swing / push ramp |
+
+Joint-space swing moves the feet in arcs about each hip (front/back legs also slide sideways a little).
+Proper straight-line foot paths need IK and the leg segment lengths.
+
 ## On boot
 
 `BOOT_PULSE_US` (1500) on all 32 outputs, then if `BOOT_STAND` is true: 3 s countdown (any key cancels)

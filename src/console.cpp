@@ -612,6 +612,13 @@ void handle(char *cmdLine) {
     else if (eq(c, "wiggle")) cmdWiggle(tok, n);
     else if (eq(c, "stand")) motion::standUp(n > 1 && eq(tok[1], "step"));
     else if (eq(c, "sit")) motion::sitDown();
+    else if (eq(c, "walk")) motion::walk(motion::Gait::Forward, n > 1 ? atoi(tok[1]) : 0);
+    else if (eq(c, "back")) motion::walk(motion::Gait::Back, n > 1 ? atoi(tok[1]) : 0);
+    else if (eq(c, "turn")) {
+        if (n < 2 || !(eq(tok[1], "left") || eq(tok[1], "right"))) Serial.println("Usage: turn <left|right> [cycles]");
+        else motion::walk(eq(tok[1], "left") ? motion::Gait::TurnLeft : motion::Gait::TurnRight,
+                          n > 2 ? atoi(tok[2]) : 0);
+    }
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);
@@ -644,6 +651,8 @@ void printHelp() {
         "\nMotion (any key aborts and holds):\n"
         "  stand | stand step     centre -> Y up -> K tuck -> Y down (step = Enter before each step)\n"
         "  sit                    lower the body, everything back to centre\n"
+        "  walk [n] | back [n] | turn left|right [n]   tetrapod gait from the stand pose;\n"
+        "                         n cycles or until a key (finishes the step, ends standing)\n"
         "Joints (legs FL FML BML BL FR FMR BMR BR, joints K Y X):\n"
         "  FR X 1600              move to a pulse (clamped to joint min/max)\n"
         "  FR X +50 | FML Y-20    offset from neutral, direction-corrected\n"
