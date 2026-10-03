@@ -58,5 +58,6 @@ include/term.h         console I/O on USB + Wi-Fi at once              (src/term
 include/net.h          Wi-Fi, OTA uploads, network console             (src/net.cpp)
 include/secrets.h      Wi-Fi credentials - git-ignored (template: secrets.example.h)
 src/main.cpp           setup/loop
-docs/                  hardware and calibration docs
+docs/                  hardware, calibration, motion and Wi-Fi docs
+scripts/ota_port.py    keeps Wi-Fi uploads on huntsman.local when CLion passes a COM port
 ```

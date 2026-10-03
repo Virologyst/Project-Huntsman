@@ -19,6 +19,9 @@ The first Wi-Fi-capable firmware must go on over USB. After that, every build in
 keep working. If the robot is **standing** when an update starts, it **sits down first**; after the update it
 reboots and (with `BOOT_STAND`) stands up again.
 
+CLion's PlatformIO plugin passes its COM-port switcher value (e.g. COM1) as the upload port even for Wi-Fi;
+`scripts/ota_port.py` swaps any serial port back to `custom_ota_host` (huntsman.local) for the wifi env.
+
 If `huntsman.local` doesn't resolve, use the IP address printed at boot in `upload_port`.
 
 Troubleshooting: the console prints Wi-Fi status (not found / failed / lost) on the UART port. The

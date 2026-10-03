@@ -80,7 +80,7 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] Wi-Fi: OTA uploads (`pio run -e wifi -t upload`) + console on huntsman.local:23, credentials in
       git-ignored include/secrets.h (docs/wifi.md). Connected 2026-10-03 as huntsman.local (192.168.0.108)
       after fitting the U.FL antenna and turning off router Smart Connect (band steering); console tested,
-      OTA upload not yet tested
+      OTA upload tested OK 2026-10-03 (sit -> flash -> reboot -> stand)
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 
 ## Open questions
@@ -93,7 +93,6 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 1. First walk test: legs in the air on the stand (`walk 2`), then on the floor; tune `WALK_*`.
 2. Leg segment lengths (coxa, femur, tibia) -> IK -> straight-line foot paths, body height/tilt control.
-3. Test an OTA upload (`pio run -e wifi -t upload`): should sit, flash, reboot, stand.
 - Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
 
 Procedures in [docs/calibration.md](docs/calibration.md) and [docs/motion.md](docs/motion.md).
