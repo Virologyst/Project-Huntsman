@@ -20,6 +20,7 @@ This is the second build; the first prototype ran on an Arduino UNO (its servo m
 | PWM | 2x PCA9685 16-ch boards on I2C: SDA = GPIO8, SCL = GPIO9 |
 | Board 1 | `0x40` - left legs (FL, FML, BML, BL) |
 | Board 2 | `0x41` (A0 bridged) - right legs (FR, FMR, BMR, BR) |
+| Range | VL53L0X time-of-flight at `0x29` on the same I2C bus, forward-facing at the front of the body |
 | Servos | 24x ~55 kg brushless HV servos (270 deg, 0.5-2.5 ms), fed 8.5 V directly |
 | Brain Box | Enclosure with the ESP32 + both PCA boards; Dupont connectors to the chassis |
 | Power | 8.5 V feed into Brain Box -> 5 V buck -> ESP32 `5V0` pin -> ESP32 3V3 -> PCA9685 VCC. Servos take 8.5 V directly, not through the PCA boards |
@@ -54,6 +55,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - **Xbox controller over BLE, not Classic BT** - the ESP32-S3 has BLE only; Xbox Series / updated One
   controllers speak BLE. Library: asukiaaa XboxSeriesXControllerESP32 (NimBLE, standard Arduino core),
   chosen over Bluepad32 which needs its own core. Needs the `min_spiffs` partition (app grew past 1.25 MB).
+- **Obstacle -> `CLIMB` flag, not a direct call** - `tof.cpp` only raises a bit in `flags.h` (edge-triggered,
+  300 mm on / 400 mm off hysteresis); `motion::walk` stops on it and `loop()` consumes it and runs
+  `motion::climb()` only from the stand pose. Keeps sensors decoupled from motion and makes the trigger
+  visible on the console (`tof`). Pololu VL53L0X library, non-blocking (checks the data-ready bit).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
 ## Current status
@@ -92,8 +97,13 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [ ] Xbox controller over BLE (branch `feature/xbox-controller`, docs/controller.md): A stand, B sit,
       left stick / D-pad walk and turn while held. Written, not yet built or tested on the robot
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
+- [ ] ToF sensor (VL53L0X): module + `CLIMB` flag + walk stop + `tof` / `climb` commands written; not yet
+      wired, built or tested. `motion::climb()` is a stub - sequence to be written (user), see docs/motion.md
 
 ## Open questions
+
+- ToF: does the VL53L0X on the 400 kHz PCA bus behave (it is rated to 400 kHz)? Does 300 mm forward give
+  enough warning at walking speed, and does the floor enter the beam when the body tilts?
 
 - Does Wi-Fi + BLE coexistence stay stable while walking (console lag, controller drops)?
 - Module flash/PSRAM code (N8 / N16R8 ...) - project assumes N8, no PSRAM.

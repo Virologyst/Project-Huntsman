@@ -66,6 +66,34 @@ X trims give clearance. The longer stride (150, was 120) reduces it - watch FML/
 Joint-space swing moves the feet in arcs about each hip. Straight-line foot paths need IK and the leg
 segment lengths.
 
+## Climb - `climb` (and the ToF sensor)
+
+A forward-facing VL53L0X (docs/hardware.md) is sampled every 50 ms from `loop()` and between walk steps.
+When the range drops below **`TOF_CLIMB_MM` = 300** it raises the **`CLIMB`** flag (`include/flags.h`, a
+bit set; `tof` shows it). The flag is edge-triggered with hysteresis: it is raised once when something
+enters the band and can't raise again until the range has gone past `TOF_CLEAR_MM` = 400; it drops if the
+object goes away before anyone acted on it.
+
+What happens on the flag (`TOF_AUTO_CLIMB` = true):
+
+- A walk in progress stops the same way a key does - current step finishes, back to the stand pose.
+- `loop()` then clears the flag and, if the robot is in the **stand pose**, runs `motion::climb()`.
+  Sitting or mid-move it just prints `[tof] obstacle ... ignored` - stand first.
+- `climb` on the console runs the same sequence by hand.
+
+**The sequence itself is not written yet** - `motion::climb()` in `src/motion.cpp` is a stub that prints
+and returns; the building blocks (`Pose`, `placeGroup`, `rampType`) and `cfg::CLIMB_*` constants are
+listed in its TODO. It must start and end in the stand pose so walking can resume.
+
+| Constant | Value | Meaning |
+|---|---|---|
+| `TOF_CLIMB_MM` | 300 | raise `CLIMB` below this |
+| `TOF_CLEAR_MM` | 400 | re-arm above this |
+| `TOF_MAX_MM` | 2000 | beyond = out of range |
+| `TOF_PERIOD_MS` | 50 | sample interval |
+| `TOF_AUTO_CLIMB` | true | `loop()` acts on the flag; false = flag only (`tof` / `climb` by hand) |
+| `CLIMB_LIFT_US`, `CLIMB_RAMP_MS` | 300, 400 | placeholders for the sequence |
+
 ## Xbox controller
 
 `walk` also takes an optional keep-going check: the controller (docs/controller.md) walks while the stick

@@ -31,4 +31,8 @@ enum class Gait { Forward, Back, TurnLeft, TurnRight };
 // keepGoing (optional) is checked after each half-cycle like a key: returning false stops the same way.
 bool walk(Gait g, int cycles, bool (*keepGoing)() = nullptr);
 
+// Climb an obstacle ahead (flags::CLIMB from the ToF sensor, or 'climb'). Starts and ends in the stand
+// pose. Sequence itself is still TODO (see motion.cpp / cfg::CLIMB_*).
+bool climb();
+
 }  // namespace motion

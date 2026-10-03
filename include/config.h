@@ -64,6 +64,21 @@ constexpr const char *PAD_ADDRESS = "";
 constexpr float PAD_DEADZONE = 0.5f;   // stick must pass half travel to start walking
 constexpr int PAD_STICK_Y_SIGN = 1;    // set to -1 if stick-forward walks backward ('pad' shows y)
 
+// ---------- Time-of-flight range sensor (VL53L0X, forward-facing, on the PCA9685 I2C bus) ----------
+constexpr bool TOF_ENABLED = true;
+constexpr uint8_t TOF_ADDR = 0x29;            // VL53L0X default (fixed unless XSHUT is driven)
+constexpr uint16_t TOF_PERIOD_MS = 50;        // continuous ranging interval
+constexpr uint32_t TOF_BUDGET_US = 33000;     // per-sample timing budget (longer = more accurate, max ~PERIOD)
+constexpr int TOF_CLIMB_MM = 300;             // closer than this raises flags::CLIMB ...
+constexpr int TOF_CLEAR_MM = 400;             // ... and it can't raise again until the range passes this
+constexpr int TOF_MAX_MM = 2000;              // beyond this = nothing in range (VL53L0X is ~1.2 m indoors)
+constexpr bool TOF_AUTO_CLIMB = true;         // loop() runs motion::climb() on the flag (only while standing)
+
+// ---------- Climb sequence (motion::climb, docs/motion.md) ----------
+// TODO: sequence not written yet - add its offsets / ramps here as it takes shape
+constexpr int CLIMB_LIFT_US = 300;            // Y up for a leg stepping onto the obstacle
+constexpr uint16_t CLIMB_RAMP_MS = 400;
+
 // Absolute pulse limits for any output, regardless of joint calibration
 constexpr int HARD_MIN_US = 400;
 constexpr int HARD_MAX_US = 2600;
