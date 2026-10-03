@@ -10,7 +10,7 @@ namespace {
 
 // Default map. Board/channel and dir verified on the rebuilt robot with 'wiggle' (2026-10-03):
 // board 1 = left legs, board 2 = right legs. dir convention: + = lift up, knee up, swing forward.
-// neutral = centre for all motion (1500; FML X and FMR X trimmed 100 us forward 2026-10-03 so the middle
+// neutral = centre for all motion (1500; FML X +150 and FMR X +100 forward, 2026-10-03, so the middle
 // legs clear BML/BMR when walking). min/max are still the
 // Arduino UNO prototype values (ticks x 4.883 us, clamped to 500-2500) - UNVERIFIED.
 const Joint DEFAULTS[servos::COUNT] = {
@@ -20,7 +20,7 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"FL",  'X', 1,  0,  977, 2500, 1500, +1, true},
     {"FML", 'K', 1,  5,  732, 2500, 1500, +1, true},
     {"FML", 'Y', 1,  3,  732, 2500, 1500, +1, true},
-    {"FML", 'X', 1,  4,  977, 2500, 1600, +1, true},  // trimmed 100 us forward - clears BML
+    {"FML", 'X', 1,  4,  977, 2500, 1650, +1, true},  // trimmed 150 us forward - clears BML
     {"BML", 'K', 1, 11,  732, 2500, 1500, -1, true},
     {"BML", 'Y', 1,  9,  732, 2500, 1500, -1, true},
     {"BML", 'X', 1, 10,  977, 2500, 1500, +1, true},

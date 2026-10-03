@@ -47,8 +47,9 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - **Wi-Fi console mirrors USB** (`Term` in term.h) so the robot can be driven untethered; OTA sits the
   robot down before flashing. No OTA password - trusted home network (user's call).
 - **Motion is relative to each joint's neutral**, which doubles as its trim (`setneutral`). All 1500
-  except FML X = 1600 and FMR X = 1400 (100 forward each; FMR added after FMR/BMR clashed in the first
-  `walk 2` - adjacent legs are in opposite tetrapod groups and swing toward each other). Map version 4 reset flash to the
+  except FML X = 1650 and FMR X = 1400 (150 / 100 forward; added after the middle legs clashed with
+  BML/BMR in the first `walk 2` - adjacent legs are in opposite tetrapod groups and swing toward each
+  other). Map version 4 reset flash to the
   code defaults (same board/channel/dir as the wiggle run).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
@@ -76,8 +77,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
 - [ ] Commit calibrated map back into `servo_map.cpp` (`export`)
 - [ ] Leg geometry (segment lengths) -> inverse kinematics
-- [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right`. First `walk 2`: works, FMR/BMR
-      touched -> FMR X trimmed forward. back/turn not yet tested.
+- [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right`. `walk 2` works with no leg
+      contact after the middle-leg trims. back/turn not yet tested.
 - [ ] IK-based gait; wave gait for heavy loads
 - [x] Wi-Fi: OTA uploads (`pio run -e wifi -t upload`) + console on huntsman.local:23, credentials in
       git-ignored include/secrets.h (docs/wifi.md). Connected 2026-10-03 as huntsman.local (192.168.0.108)
