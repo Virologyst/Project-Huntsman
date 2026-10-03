@@ -63,8 +63,8 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 - [x] Motion module: ramps, `stand` / `stand step` / `sit` (docs/motion.md)
 - [x] First stand-up (2026-10-03): `stand step` lifted the body; power harness held with all 8 Y pushing at once.
       Knee tuck sign is - (toward body). Tuned: tuck -100 -> -300, ramps halved (500 ms, push 750 ms)
-- [ ] Re-test stand with the tuned values  <- next
-- [ ] Then enable `BOOT_STAND` (user wants stand-up on boot)
+- [x] Re-tested stand with the tuned values - works
+- [x] `BOOT_STAND` enabled: boot centres all outputs, 3 s countdown (any key cancels), then stands
 - [ ] Board clock calibration (`cal` / `calf`), then `save` - deferred: scope readout only gives 2 digits at
       the default timebase (read 1.3 ms for a 1500 us command); zoom in, use cursors, or use `calf`
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
@@ -81,11 +81,10 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 
 ## Next step
 
-1. (done) map in code.
-2. `stand step` on the stand: check each step's direction, watch the power harness under the Y-down push.
-3. Enable `BOOT_STAND`.
-4. Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
-4. Possible: OTA firmware updates over Wi-Fi (ArduinoOTA / espota) - needs the U.FL antenna fitted and
-   Wi-Fi credentials in a git-ignored secrets file.
+Robot stands on boot. Candidates for what's next (user to choose):
+- Next motion: walking (leg geometry -> IK -> tetrapod gait), or simpler scripted moves first.
+- Calibrate each board's oscillator (`cal` / `calf`, `save`); set min/max/neutral per joint.
+- OTA firmware updates over Wi-Fi (ArduinoOTA / espota) - needs the U.FL antenna fitted and
+  Wi-Fi credentials in a git-ignored secrets file.
 
-Procedures in [docs/calibration.md](docs/calibration.md).
+Procedures in [docs/calibration.md](docs/calibration.md) and [docs/motion.md](docs/motion.md).

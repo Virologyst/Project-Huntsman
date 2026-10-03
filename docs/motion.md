@@ -27,6 +27,6 @@ Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 m
 ## On boot
 
 `BOOT_PULSE_US` (1500) on all 32 outputs, then if `BOOT_STAND` is true: 3 s countdown (any key cancels)
-and the stand sequence. `BOOT_STAND` is **false** until the sequence has been verified with `stand step`.
+and the stand sequence. `BOOT_STAND` is **true** (enabled 2026-10-03 after the tuned stand was verified).
 
 All values: `include/config.h`.

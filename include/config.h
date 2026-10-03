@@ -36,7 +36,7 @@ constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 
 // Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
-constexpr bool BOOT_STAND = false;
+constexpr bool BOOT_STAND = true;
 constexpr uint16_t BOOT_STAND_DELAY_MS = 3000;
 
 // Absolute pulse limits for any output, regardless of joint calibration
