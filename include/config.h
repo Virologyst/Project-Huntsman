@@ -54,9 +54,9 @@ constexpr int WALK_FRONT_SPREAD_US = 400;   // FL FR X base toward the head (~54
 // Knee travel doubled 2026-10-03 (250 -> 500 us): the tucked end stays at the stand tuck, the reach end
 // goes 200 past the knee's neutral; the Y change is doubled with it (40 -> 80).
 constexpr int WALK_FRONT_REACH_KNEE_US = 350;   // knee out: foot far ahead (was 200; reaches further 2026-10-04)
-constexpr int WALK_FRONT_REACH_Y_US = -165;     // Y when the reached foot is set down (was -140, scaled with the reach)
+constexpr int WALK_FRONT_REACH_Y_US = -250;     // Y when the reached foot is set down (was -165: foot stopped ~25 mm up)
 constexpr int WALK_FRONT_PULL_KNEE_US = -750;   // knee closed at the end of the pull (was -550; stroke 750 -> 1100 us. FR knee min is -768)
-constexpr int WALK_FRONT_PULL_Y_US = 10;        // Y at the end of the pull (was -20, scaled with the stroke)
+constexpr int WALK_FRONT_PULL_Y_US = 40;        // Y at the end of the pull (was 10: lift back up slightly on the pull)
 constexpr int WALK_BACK_SPREAD_US = 320;    // BL BR X base toward the tail (~43 deg; 400 scraped the battery sides)
 // Back legs mirror the front legs: X holds, and they push the body forward with K and Y. Swing: lift,
 // knee closes to TUCK_KNEE, lower to TUCK_Y (foot set down close in). Stance: knee opens to PUSH_KNEE

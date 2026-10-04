@@ -71,9 +71,9 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_CORNER_KNEE_US` | -200 | corner-leg knee in the walk pose |
 | `WALK_FRONT_SPREAD_US` | 400 | FL FR X base toward the head (~54 deg; was 220) |
 | `WALK_FRONT_REACH_KNEE_US` | 350 | front-leg knee at full reach (was 200) |
-| `WALK_FRONT_REACH_Y_US` | -165 | front-leg Y when the reached foot is set down (was -140) |
+| `WALK_FRONT_REACH_Y_US` | -250 | front-leg Y when the reached foot is set down (was -165: foot stopped ~25 mm above the ground, body then dropped onto it mid-pull) |
 | `WALK_FRONT_PULL_KNEE_US` | -750 | front-leg knee at the end of the pull (was -550; FR knee limit is -768) |
-| `WALK_FRONT_PULL_Y_US` | 10 | front-leg Y at the end of the pull (was -20) |
+| `WALK_FRONT_PULL_Y_US` | 40 | front-leg Y at the end of the pull (was 10) |
 | `WALK_BACK_SPREAD_US` | 320 | BL BR X base toward the tail (~43 deg; 400 scraped the battery sides) |
 | `WALK_REAR_TUCK_KNEE_US` | -550 | back-leg knee when set down, start of the push (was -300) |
 | `WALK_REAR_TUCK_Y_US` | -20 | back-leg Y when the tucked foot is set down (was -60) |
