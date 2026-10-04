@@ -91,6 +91,12 @@ int walkBaseX(const char *leg) {
 int walkKnee(const char *leg) { return isCorner(leg) ? cfg::WALK_CORNER_KNEE_US : cfg::WALK_MID_KNEE_US; }
 int walkStride(const char *leg) { return isCorner(leg) ? cfg::WALK_STRIDE_CORNER_US : cfg::WALK_STRIDE_MID_US; }
 
+// X at one end of a leg's step: s = +1 forward end, -1 back end (FML reaches a little further forward)
+int strideEnd(const char *leg, int s) {
+    int extra = (s > 0 && !strcmp(leg, "FML")) ? cfg::WALK_FML_EXTRA_REACH_US : 0;
+    return walkBaseX(leg) + s * walkStride(leg) + extra;
+}
+
 bool isFront(const char *leg) { return leg[0] == 'F'; }
 
 // Y lift above the stand pose while a leg is in the air: the front corner legs lift higher
@@ -124,14 +130,14 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
         if (kneeStroke(swing[k], g)) {
             addKneeStroke(move, lower, swing[k], isFront(swing[k]) == forward);
         } else {
-            move.add(swing[k], 'X', walkBaseX(swing[k]) + walkStride(swing[k]) * strideSign(swing[k], g));
+            move.add(swing[k], 'X', strideEnd(swing[k], strideSign(swing[k], g)));
             lower.add(swing[k], 'Y', cfg::STAND_PUSH_US);
         }
         // Stance leg: on the ground to the end of its stroke
         if (kneeStroke(stance[k], g))
             addKneeStroke(move, move, stance[k], isFront(stance[k]) != forward);
         else
-            move.add(stance[k], 'X', walkBaseX(stance[k]) - walkStride(stance[k]) * strideSign(stance[k], g));
+            move.add(stance[k], 'X', strideEnd(stance[k], -strideSign(stance[k], g)));
     }
     lift.run(cfg::WALK_LIFT_MS);
     move.run(cfg::WALK_SWING_MS);

@@ -38,9 +38,9 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   sit are unchanged.
   - Middle legs (FML FMR BML BMR): knee out to `WALK_MID_KNEE_US` = -50 (stand is -300; was -100), feet reach
     out so each swing covers more ground.
-  - Front legs (FL FR): X base `WALK_FRONT_SPREAD_US` = 220 (~30 deg) toward the head, so the front feet
+  - Front legs (FL FR): X base `WALK_FRONT_SPREAD_US` = 400 (~54 deg) toward the head, so the front feet
     come together ahead of the body before the first step and pull. Back legs (BL BR): X base
-    `WALK_BACK_SPREAD_US` = 220 (~30 deg) toward the tail, they push. Knee `WALK_CORNER_KNEE_US` = -200 on all four.
+    `WALK_BACK_SPREAD_US` = 400 (~54 deg) toward the tail, they push. Knee `WALK_CORNER_KNEE_US` = -200 on all four.
   - Back-middle legs (BML BMR): X base `WALK_BACK_MID_SPREAD_US` = 60 toward the tail, to stay clear of
     the front-middle legs (FMR/BMR touched at stride 150).
   - The body sits lower in the walk pose (expected).
@@ -69,20 +69,21 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 |---|---|---|
 | `WALK_MID_KNEE_US` | -50 | middle-leg knee in the walk pose |
 | `WALK_CORNER_KNEE_US` | -200 | corner-leg knee in the walk pose |
-| `WALK_FRONT_SPREAD_US` | 220 | FL FR X base toward the head (~30 deg) |
+| `WALK_FRONT_SPREAD_US` | 400 | FL FR X base toward the head (~54 deg; was 220) |
 | `WALK_FRONT_REACH_KNEE_US` | 200 | front-leg knee at full reach (was -50: knee travel doubled to 500 us) |
 | `WALK_FRONT_REACH_Y_US` | -140 | front-leg Y when the reached foot is set down (was -100) |
-| `WALK_FRONT_PULL_KNEE_US` | -300 | front-leg knee at the end of the pull |
-| `WALK_FRONT_PULL_Y_US` | -60 | front-leg Y at the end of the pull |
-| `WALK_BACK_SPREAD_US` | 220 | BL BR X base toward the tail (~30 deg) |
-| `WALK_REAR_TUCK_KNEE_US` | -300 | back-leg knee when set down, start of the push |
-| `WALK_REAR_TUCK_Y_US` | -60 | back-leg Y when the tucked foot is set down |
+| `WALK_FRONT_PULL_KNEE_US` | -550 | front-leg knee at the end of the pull (was -300: stroke +50%, inward end) |
+| `WALK_FRONT_PULL_Y_US` | -20 | front-leg Y at the end of the pull (was -60) |
+| `WALK_BACK_SPREAD_US` | 400 | BL BR X base toward the tail (~54 deg; was 220) |
+| `WALK_REAR_TUCK_KNEE_US` | -550 | back-leg knee when set down, start of the push (was -300) |
+| `WALK_REAR_TUCK_Y_US` | -20 | back-leg Y when the tucked foot is set down (was -60) |
 | `WALK_REAR_PUSH_KNEE_US` | 200 | back-leg knee at the end of the push (was -50: knee travel doubled to 500 us) |
 | `WALK_REAR_PUSH_Y_US` | -140 | back-leg Y at the end of the push (was -100) |
 | `WALK_BACK_MID_SPREAD_US` | 60 | BML BMR X base toward the tail (middle-leg clearance) |
-| `WALK_LIFT_US` | 150 | Y up from the stand pose during swing |
-| `WALK_FRONT_LIFT_US` | 300 | same, for FL FR only (150 left the front feet not quite off the ground) |
+| `WALK_LIFT_US` | 350 | Y up from the stand pose during swing (was 150: only ~10 mm clearance) |
+| `WALK_FRONT_LIFT_US` | 500 | same, for FL FR only (was 300) |
 | `WALK_STRIDE_MID_US` | 150 | middle-leg X each way from base (~20 deg) |
+| `WALK_FML_EXTRA_REACH_US` | 23 | FML only: forward end of its step 15% further (150 -> 173) |
 | `WALK_STRIDE_CORNER_US` | 150 | corner-leg X each way from base (turns only) |
 | `WALK_LIFT_MS` | 200 | lift / lower ramp |
 | `WALK_SWING_MS` | 400 | swing / push ramp |
@@ -94,6 +95,11 @@ FMR/BMR, and FL/FML and FR/FMR now the front legs sit further forward.
 
 Joint-space swing moves the feet in arcs about each hip. Straight-line foot paths need IK and the leg
 segment lengths.
+
+Tuning 2026-10-04 (user, after floor tests): corners ~25 deg further toward head/tail, front/back K-Y
+stroke 50% longer on the inward end (reach unchanged), FML reaches 15% further forward, all legs lift
+much higher to step over obstacles. Turns: corner X at base + stride can now reach the X limit (977 us)
+and clamp there.
 
 ## Climb - `climb` (and the ToF sensor)
 

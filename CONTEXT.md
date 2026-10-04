@@ -3,7 +3,7 @@
 Living summary of what this project is, what has been decided and why, and where it is up to.
 **Keep this file current** - update it whenever hardware, decisions, status or next steps change.
 
-_Last updated: 2026-10-03_
+_Last updated: 2026-10-04_
 
 ## What it is
 
@@ -27,6 +27,13 @@ This is the second build; the first prototype ran on an Arduino UNO (its servo m
 | Battery | Makita 18 V 6 Ah (~108 Wh), mounted centrally. Needs low-voltage cutoff - Makita packs rely on the tool |
 
 Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
+
+**Payload:** a Raspberry Pi + camera payload is a separate project at
+`C:\Users\craig\PycharmProjects\Huntsman-Payload` (its `ROBOT.md` summarises this robot for it). It gets its
+own 5 V / 5 A buck from the 18 V battery, not from the ESP32. It talks to the robot over the Wi-Fi console
+(huntsman.local:23), so changes to console commands, the one-client rule or abort-on-any-key affect it.
+It is expected to **command the robot in future** (user, 2026-10-04) - likely needs a structured protocol
+and a way to share the console with the PlatformIO monitor (e.g. a second port).
 
 ## Key decisions (and why)
 
