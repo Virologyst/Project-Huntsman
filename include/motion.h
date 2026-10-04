@@ -7,7 +7,9 @@ namespace motion {
 
 // Ramp the listed joints from their current pulse to targets over ms, all together.
 // If abortable, any serial input aborts and holds position. Returns false if aborted.
-bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable = true);
+// easeOut (optional, per joint): that joint decelerates to a stop instead of arriving at full speed.
+bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable = true,
+          const bool easeOut[] = nullptr);
 
 // Ramp one joint type ('K', 'Y', 'X') on all 8 legs to neutral + offset * dir
 bool rampType(char type, int offsetUs, uint16_t ms);

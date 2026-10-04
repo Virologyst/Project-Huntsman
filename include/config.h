@@ -53,10 +53,10 @@ constexpr int WALK_FRONT_SPREAD_US = 400;   // FL FR X base toward the head (~54
 // GUESSED values, no leg geometry yet - tune PULL_Y until the planted foot neither lifts nor jacks the body.
 // Knee travel doubled 2026-10-03 (250 -> 500 us): the tucked end stays at the stand tuck, the reach end
 // goes 200 past the knee's neutral; the Y change is doubled with it (40 -> 80).
-constexpr int WALK_FRONT_REACH_KNEE_US = 200;   // knee out: foot far ahead (was -50)
-constexpr int WALK_FRONT_REACH_Y_US = -140;     // Y when the reached foot is set down (was -100; stand push = -100)
-constexpr int WALK_FRONT_PULL_KNEE_US = -550;   // knee closed at the end of the pull (was -300: stroke +50%, inward end only)
-constexpr int WALK_FRONT_PULL_Y_US = -20;       // Y at the end of the pull (was -60: Y change scaled with the stroke)
+constexpr int WALK_FRONT_REACH_KNEE_US = 350;   // knee out: foot far ahead (was 200; reaches further 2026-10-04)
+constexpr int WALK_FRONT_REACH_Y_US = -165;     // Y when the reached foot is set down (was -140, scaled with the reach)
+constexpr int WALK_FRONT_PULL_KNEE_US = -750;   // knee closed at the end of the pull (was -550; stroke 750 -> 1100 us. FR knee min is -768)
+constexpr int WALK_FRONT_PULL_Y_US = 10;        // Y at the end of the pull (was -20, scaled with the stroke)
 constexpr int WALK_BACK_SPREAD_US = 320;    // BL BR X base toward the tail (~43 deg; 400 scraped the battery sides)
 // Back legs mirror the front legs: X holds, and they push the body forward with K and Y. Swing: lift,
 // knee closes to TUCK_KNEE, lower to TUCK_Y (foot set down close in). Stance: knee opens to PUSH_KNEE
@@ -69,7 +69,7 @@ constexpr int WALK_BACK_MID_SPREAD_US = 60; // BML BMR X base toward the tail: c
 constexpr int WALK_LIFT_US = 350;           // Y up from the stand pose while swinging (was 150: ~10 mm clearance, too low to step over things)
 constexpr int WALK_FRONT_LIFT_US = 500;      // FL FR lift higher than the rest (was 300; raised with WALK_LIFT_US)
 constexpr int WALK_STRIDE_MID_US = 150;     // middle legs X each way from base (~20 deg)
-constexpr int WALK_FML_EXTRA_REACH_US = 23;  // FML only: forward end of its step 15% further (150 -> 173)
+constexpr int WALK_FML_EXTRA_REACH_US = 46;  // FML only: forward end of its step 30% further (150 -> 196; was 23)
 constexpr int WALK_STRIDE_CORNER_US = 150;  // corner legs X each way from base (turns only)
 constexpr uint16_t WALK_LIFT_MS = 200;   // lift and lower
 constexpr uint16_t WALK_SWING_MS = 400;  // swing / push

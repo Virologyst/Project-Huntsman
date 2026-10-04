@@ -56,15 +56,17 @@ bool isLeft(const char *leg) { return leg[strlen(leg) - 1] == 'L'; }
 struct Pose {
     int joints[servos::COUNT];
     int targets[servos::COUNT];
+    bool ease[servos::COUNT];
     int n = 0;
 
-    void add(const char *leg, char type, int offsetUs) {
+    void add(const char *leg, char type, int offsetUs, bool easeOut = false) {
         int i = servos::find(leg, type);
         joints[n] = i;
         targets[n] = servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir;
+        ease[n] = easeOut;
         n++;
     }
-    void run(uint16_t ms) { motion::ramp(joints, targets, n, ms, false); }  // a step always completes
+    void run(uint16_t ms) { motion::ramp(joints, targets, n, ms, false, ease); }  // a step always completes
 };
 
 // +1 = this leg's swing goes forward when walking this way
@@ -109,10 +111,11 @@ bool kneeStroke(const char *leg, motion::Gait g) {
 }
 
 // Add a corner leg's K (and its ground Y) at the extended or tucked end of its stroke
-void addKneeStroke(Pose &knee, Pose &ground, const char *leg, bool extended) {
+// (touchdown = the Y move is the swing leg lowering: front feet ease in so they don't stamp)
+void addKneeStroke(Pose &knee, Pose &ground, const char *leg, bool extended, bool touchdown = false) {
     if (isFront(leg)) {
         knee.add(leg, 'K', extended ? cfg::WALK_FRONT_REACH_KNEE_US : cfg::WALK_FRONT_PULL_KNEE_US);
-        ground.add(leg, 'Y', extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US);
+        ground.add(leg, 'Y', extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US, touchdown);
     } else {
         knee.add(leg, 'K', extended ? cfg::WALK_REAR_PUSH_KNEE_US : cfg::WALK_REAR_TUCK_KNEE_US);
         ground.add(leg, 'Y', extended ? cfg::WALK_REAR_PUSH_Y_US : cfg::WALK_REAR_TUCK_Y_US);
@@ -128,10 +131,10 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
         // Swing leg: in the air to the start of its stroke, then down
         // (walking forward a front leg sets down extended and a back leg tucked; walking back, the reverse)
         if (kneeStroke(swing[k], g)) {
-            addKneeStroke(move, lower, swing[k], isFront(swing[k]) == forward);
+            addKneeStroke(move, lower, swing[k], isFront(swing[k]) == forward, true);
         } else {
             move.add(swing[k], 'X', strideEnd(swing[k], strideSign(swing[k], g)));
-            lower.add(swing[k], 'Y', cfg::STAND_PUSH_US);
+            lower.add(swing[k], 'Y', cfg::STAND_PUSH_US, isCorner(swing[k]) && isFront(swing[k]));
         }
         // Stance leg: on the ground to the end of its stroke
         if (kneeStroke(stance[k], g))
@@ -174,7 +177,7 @@ bool stopRequested(bool (*keepGoing)()) {
 
 namespace motion {
 
-bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable) {
+bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable, const bool easeOut[]) {
     int start[servos::COUNT];
     for (int k = 0; k < count; k++) {
         int now = servos::position(joints[k]);
@@ -183,8 +186,11 @@ bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool 
     int steps = max(1, ms / cfg::FRAME_MS);
     for (int s = 1; s <= steps; s++) {
         uint32_t t = millis();
-        for (int k = 0; k < count; k++)
-            servos::moveRaw(joints[k], start[k] + (targets[k] - start[k]) * s / steps);
+        for (int k = 0; k < count; k++) {
+            int done = s * 1000 / steps;                                       // linear progress, 0-1000
+            if (easeOut && easeOut[k]) done = 1000 - (1000 - done) * (1000 - done) / 1000;  // quadratic ease-out
+            servos::moveRaw(joints[k], start[k] + (targets[k] - start[k]) * done / 1000);
+        }
         if (abortable && aborted()) return false;
         while (millis() - t < cfg::FRAME_MS) {}
     }
