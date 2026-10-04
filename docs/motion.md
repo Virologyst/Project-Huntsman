@@ -40,7 +40,7 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
     out so each swing covers more ground.
   - Front legs (FL FR): X base `WALK_FRONT_SPREAD_US` = 400 (~54 deg) toward the head, so the front feet
     come together ahead of the body before the first step and pull. Back legs (BL BR): X base
-    `WALK_BACK_SPREAD_US` = 400 (~54 deg) toward the tail, they push. Knee `WALK_CORNER_KNEE_US` = -200 on all four.
+    `WALK_BACK_SPREAD_US` = 320 (~43 deg) toward the tail, they push. Knee `WALK_CORNER_KNEE_US` = -200 on all four.
   - Back-middle legs (BML BMR): X base `WALK_BACK_MID_SPREAD_US` = 60 toward the tail, to stay clear of
     the front-middle legs (FMR/BMR touched at stride 150).
   - The body sits lower in the walk pose (expected).
@@ -74,7 +74,7 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_FRONT_REACH_Y_US` | -140 | front-leg Y when the reached foot is set down (was -100) |
 | `WALK_FRONT_PULL_KNEE_US` | -550 | front-leg knee at the end of the pull (was -300: stroke +50%, inward end) |
 | `WALK_FRONT_PULL_Y_US` | -20 | front-leg Y at the end of the pull (was -60) |
-| `WALK_BACK_SPREAD_US` | 400 | BL BR X base toward the tail (~54 deg; was 220) |
+| `WALK_BACK_SPREAD_US` | 320 | BL BR X base toward the tail (~43 deg; 400 scraped the battery sides) |
 | `WALK_REAR_TUCK_KNEE_US` | -550 | back-leg knee when set down, start of the push (was -300) |
 | `WALK_REAR_TUCK_Y_US` | -20 | back-leg Y when the tucked foot is set down (was -60) |
 | `WALK_REAR_PUSH_KNEE_US` | 200 | back-leg knee at the end of the push (was -50: knee travel doubled to 500 us) |
@@ -98,7 +98,7 @@ segment lengths.
 
 Tuning 2026-10-04 (user, after floor tests): corners ~25 deg further toward head/tail, front/back K-Y
 stroke 50% longer on the inward end (reach unchanged), FML reaches 15% further forward, all legs lift
-much higher to step over obstacles. Turns: corner X at base + stride can now reach the X limit (977 us)
+much higher to step over obstacles. Back pair then eased to 320: at 400 BL/BR scraped the battery. Turns: corner X at base + stride can now reach the X limit (977 us)
 and clamp there.
 
 ## Climb - `climb` (and the ToF sensor)

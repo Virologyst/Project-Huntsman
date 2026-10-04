@@ -57,7 +57,7 @@ constexpr int WALK_FRONT_REACH_KNEE_US = 200;   // knee out: foot far ahead (was
 constexpr int WALK_FRONT_REACH_Y_US = -140;     // Y when the reached foot is set down (was -100; stand push = -100)
 constexpr int WALK_FRONT_PULL_KNEE_US = -550;   // knee closed at the end of the pull (was -300: stroke +50%, inward end only)
 constexpr int WALK_FRONT_PULL_Y_US = -20;       // Y at the end of the pull (was -60: Y change scaled with the stroke)
-constexpr int WALK_BACK_SPREAD_US = 400;    // BL BR X base toward the tail (~54 deg; was 220, +~25 deg 2026-10-04)
+constexpr int WALK_BACK_SPREAD_US = 320;    // BL BR X base toward the tail (~43 deg; 400 scraped the battery sides)
 // Back legs mirror the front legs: X holds, and they push the body forward with K and Y. Swing: lift,
 // knee closes to TUCK_KNEE, lower to TUCK_Y (foot set down close in). Stance: knee opens to PUSH_KNEE
 // while Y moves to PUSH_Y. GUESSED values, same starting numbers as the front - tune separately.
