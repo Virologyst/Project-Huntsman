@@ -74,6 +74,7 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_FRONT_REACH_Y_US` | -250 | front-leg Y when the reached foot is set down (was -165: foot stopped ~25 mm above the ground, body then dropped onto it mid-pull) |
 | `WALK_FRONT_PULL_KNEE_US` | -750 | front-leg knee at the end of the pull (was -550; FR knee limit is -768) |
 | `WALK_FRONT_PULL_Y_US` | 40 | front-leg Y at the end of the pull (was 10) |
+| `WALK_FRONT_HANDOVER_US` | 60 | handover: as one front foot lowers, the planted one eases Y up this much (ease-out, same ramp) so the body settles onto the new foot - user's idea |
 | `WALK_BACK_SPREAD_US` | 320 | BL BR X base toward the tail (~43 deg; 400 scraped the battery sides) |
 | `WALK_REAR_TUCK_KNEE_US` | -550 | back-leg knee when set down, start of the push (was -300) |
 | `WALK_REAR_TUCK_Y_US` | -20 | back-leg Y when the tucked foot is set down (was -60) |

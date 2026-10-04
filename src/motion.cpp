@@ -137,9 +137,16 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
             lower.add(swing[k], 'Y', cfg::STAND_PUSH_US, isCorner(swing[k]) && isFront(swing[k]));
         }
         // Stance leg: on the ground to the end of its stroke
-        if (kneeStroke(stance[k], g))
-            addKneeStroke(move, move, stance[k], isFront(stance[k]) != forward);
-        else
+        if (kneeStroke(stance[k], g)) {
+            bool extended = isFront(stance[k]) != forward;
+            addKneeStroke(move, move, stance[k], extended);
+            // Handover: while the swing front foot lowers, the planted front foot eases up a little so the
+            // body settles onto the new foot instead of dropping onto it when this leg lifts next step
+            if (isFront(stance[k])) {
+                int endY = extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US;
+                lower.add(stance[k], 'Y', endY + cfg::WALK_FRONT_HANDOVER_US, true);
+            }
+        } else
             move.add(stance[k], 'X', strideEnd(stance[k], -strideSign(stance[k], g)));
     }
     lift.run(cfg::WALK_LIFT_MS);
