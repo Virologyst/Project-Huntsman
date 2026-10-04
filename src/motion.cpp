@@ -124,17 +124,29 @@ void addKneeStroke(Pose &knee, Pose &ground, const char *leg, bool extended, boo
 
 // Swing group: lift, swing to base + stride while the stance group pushes to base - stride, lower
 void halfCycle(const char *const swing[], const char *const stance[], motion::Gait g) {
-    Pose lift, move, lower;
+    Pose lift, move, lower, touch;  // touch: slow final set-down of the front feet (and the handover)
     bool forward = g == motion::Gait::Forward;
     for (int k = 0; k < 4; k++) {
         lift.add(swing[k], 'Y', cfg::STAND_PUSH_US + walkLift(swing[k]));
         // Swing leg: in the air to the start of its stroke, then down
-        // (walking forward a front leg sets down extended and a back leg tucked; walking back, the reverse)
+        // (walking forward a front leg sets down extended and a back leg tucked; walking back, the reverse).
+        // Front feet stop WALK_FRONT_APPROACH_US above the ground at normal speed, then touch down slowly:
+        // the servos can't follow a fast drop, so easing a fast ramp alone still lands at full speed.
+        bool frontCorner = isCorner(swing[k]) && isFront(swing[k]);
         if (kneeStroke(swing[k], g)) {
-            addKneeStroke(move, lower, swing[k], isFront(swing[k]) == forward, true);
+            bool extended = isFront(swing[k]) == forward;
+            addKneeStroke(move, frontCorner ? touch : lower, swing[k], extended, true);
+            if (frontCorner)
+                lower.add(swing[k], 'Y',
+                          (extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US) + cfg::WALK_FRONT_APPROACH_US);
         } else {
             move.add(swing[k], 'X', strideEnd(swing[k], strideSign(swing[k], g)));
-            lower.add(swing[k], 'Y', cfg::STAND_PUSH_US, isCorner(swing[k]) && isFront(swing[k]));
+            if (frontCorner) {
+                lower.add(swing[k], 'Y', cfg::STAND_PUSH_US + cfg::WALK_FRONT_APPROACH_US);
+                touch.add(swing[k], 'Y', cfg::STAND_PUSH_US, true);
+            } else {
+                lower.add(swing[k], 'Y', cfg::STAND_PUSH_US);
+            }
         }
         // Stance leg: on the ground to the end of its stroke
         if (kneeStroke(stance[k], g)) {
@@ -144,7 +156,7 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
             // body settles onto the new foot instead of dropping onto it when this leg lifts next step
             if (isFront(stance[k])) {
                 int endY = extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US;
-                lower.add(stance[k], 'Y', endY + cfg::WALK_FRONT_HANDOVER_US, true);
+                touch.add(stance[k], 'Y', endY + cfg::WALK_FRONT_HANDOVER_US, true);
             }
         } else
             move.add(stance[k], 'X', strideEnd(stance[k], -strideSign(stance[k], g)));
@@ -152,6 +164,7 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
     lift.run(cfg::WALK_LIFT_MS);
     move.run(cfg::WALK_SWING_MS);
     lower.run(cfg::WALK_LIFT_MS);
+    if (touch.n) touch.run(cfg::WALK_FRONT_TOUCHDOWN_MS);
 }
 
 // Lift one group, move its X and K to the given pose, lower it (feet never drag)

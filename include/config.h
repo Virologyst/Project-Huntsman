@@ -60,6 +60,11 @@ constexpr int WALK_FRONT_PULL_Y_US = 40;        // Y at the end of the pull (was
 // Handover: as one front foot lowers onto the ground, the other (planted, end of its pull) eases Y up by
 // this much at the same time, so the body is lowered onto the new foot instead of falling onto it.
 constexpr int WALK_FRONT_HANDOVER_US = 60;
+// Front touchdown: the lower ramp stops this far above the set-down Y, then the last part is a slow eased
+// ramp (the handover runs in it too). A 650 us drop in 200 ms outruns the servos, so easing alone still
+// landed at full speed and punched the toes.
+constexpr int WALK_FRONT_APPROACH_US = 100;
+constexpr uint16_t WALK_FRONT_TOUCHDOWN_MS = 300;
 constexpr int WALK_BACK_SPREAD_US = 320;    // BL BR X base toward the tail (~43 deg; 400 scraped the battery sides)
 // Back legs mirror the front legs: X holds, and they push the body forward with K and Y. Swing: lift,
 // knee closes to TUCK_KNEE, lower to TUCK_Y (foot set down close in). Stance: knee opens to PUSH_KNEE
