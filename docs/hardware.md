@@ -71,6 +71,14 @@ Measured by the user 2026-10-05 (renders: the layout follows a real huntsman / w
 | Femur | 100 mm (103 actual) | lift (Y) axis to knee (K) axis |
 | Tibia | 150 mm | knee (K) axis to foot tip |
 
+Joint zeros at 1500 us (user, 2026-10-05; rough, for IK):
+
+| | Femur (Y) | Knee: femur-tibia angle (K) | Leg yaw from the head, outward (X) |
+|---|---|---|---|
+| FML / FMR | level | 110 deg | 80 deg (10 deg forward of straight out) |
+| BML / BMR | level | 80 deg (offset to avoid collisions) | 100 deg (10 deg back) |
+| BL / BR | - | - | not straight back at 1500; straight back (180) in the walk pose (X 320 toward the tail), so ~137 deg at 1500 |
+
 Hip (X pivot) to knee is ~120 mm (= coxa + femur). Servos: DSC55MG-class 55 kg, 270 deg over
 500-2500 us = 0.135 deg/us (7.4 us/deg) - before board clock calibration the real pulse may be ~10% short.
 
