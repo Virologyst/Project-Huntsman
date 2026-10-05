@@ -494,8 +494,8 @@ void climbPose(const char *leg, float p, int &xUs, int &yUs, int &kUs) {
         y = lerpf(cfg::WALK_FRONT_PULL_Y_US, cfg::CLIMB_FRONT_REACH_Y_US, p);
     } else if (isCorner(leg)) {           // tucked (front of stroke) -> pushed out (back)
         x = walkBaseX(leg);
-        k = lerpf(cfg::WALK_REAR_PUSH_KNEE_US, cfg::WALK_REAR_TUCK_KNEE_US, p);
-        y = lerpf(cfg::WALK_REAR_PUSH_Y_US, cfg::WALK_REAR_TUCK_Y_US, p);
+        k = lerpf(cfg::CLIMB_REAR_PUSH_KNEE_US, cfg::WALK_REAR_TUCK_KNEE_US, p);
+        y = lerpf(cfg::CLIMB_REAR_PUSH_Y_US, cfg::WALK_REAR_TUCK_Y_US, p);
     } else {                              // middles swing X; femur / knee from the straight-line IK
         x = walkBaseX(leg) + cfg::CLIMB_STRIDE_MID_US * (2.0f * p - 1.0f);
         y = cfg::STAND_PUSH_US;
@@ -509,7 +509,10 @@ void climbPose(const char *leg, float p, int &xUs, int &yUs, int &kUs) {
 }
 
 // The four front legs (FL FR FML FMR) lift as high as their Y joints allow; the rest CLIMB_LIFT_US
-int climbLift(const char *leg) { return leg[0] == 'F' ? cfg::CLIMB_FRONT_LIFT_US : cfg::CLIMB_LIFT_US; }
+int climbLift(const char *leg) {
+    if (leg[0] == 'F') return cfg::CLIMB_FRONT_LIFT_US;
+    return isCorner(leg) ? cfg::CLIMB_REAR_LIFT_US : cfg::CLIMB_LIFT_US;
+}
 
 // One wave phase: group j steps (lift, reach to the front of its stroke, set down) while every other leg
 // pushes back a quarter of its stroke. Returns false if keepGoing paused it (state not advanced: resume

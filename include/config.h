@@ -143,13 +143,17 @@ constexpr int WALK_FRONT_OBSTACLE_LIFT_US = 600;  // extra front-leg lift while 
 // group lifts high, reaches to the front of its stroke and sets down while every other leg pushes the body
 // forward a quarter of its stroke. Front corners use the walk's reach / pull K-Y stroke, back corners the
 // tuck / push stroke, middles swing X (with the straight-line IK when WALK_MID_IK).
-constexpr int CLIMB_LIFT_US = 550;            // Y up for a stepping leg (BML BMR BL BR)
-constexpr int CLIMB_FRONT_LIFT_US = 1100;     // FL FR FML FMR: as high as they go - always clamps at each Y joint's limit
-constexpr int CLIMB_FRONT_PUSH_US = 300;      // FL FR FML FMR push down this much more on the ground: front of the body up
+constexpr int CLIMB_LIFT_US = 550;            // Y up for a stepping leg (BML BMR)
+constexpr int CLIMB_REAR_LIFT_US = 350;       // BL BR: lower and quicker - the back has no corner support while they step
+constexpr int CLIMB_FRONT_LIFT_US = 600;      // FL FR FML FMR (was 1100 = to the Y limit: too high)
+constexpr int CLIMB_FRONT_PUSH_US = 100;      // FL FR FML FMR push down this much more on the ground: front of the body up
+                                              // (was 300: nose-up tilt moved the weight back and it fell backwards)
                                               // (~40 deg on the femur; much further and the foot swings under the body)
 constexpr int CLIMB_STRIDE_MID_US = 200;      // middle legs X each way from base over a full stroke (~27 deg; was 100)
 constexpr int CLIMB_FRONT_REACH_KNEE_US = 350; // front corners land this far out (walk: 100); the pull still ends at
 constexpr int CLIMB_FRONT_REACH_Y_US = -175;   // WALK_FRONT_PULL_*, so the stroke drags the body up onto the obstacle
+constexpr int CLIMB_REAR_PUSH_KNEE_US = 450;  // BL BR push further than walking (walk: 200 / -140): knee straighter at the
+constexpr int CLIMB_REAR_PUSH_Y_US = -200;    // end of the push, foot driven further down and back
 constexpr int CLIMB_SWING_KNEE_US = 1100;      // in the air every stepping leg's knee opens this far out from its landing
                                               // knee - always clamps at the K limit: the foot reaches as wide as it can
 constexpr uint16_t CLIMB_SWING_MS = 400;      // stepping leg: lift + reach

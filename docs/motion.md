@@ -178,10 +178,12 @@ the body forward** a quarter of its stroke:
   it goes (`CLIMB_SWING_KNEE_US` = 1100, clamps at the K limit) to reach up and over, then closes to its
   landing angle as the leg comes down. Aim: reach far over and almost rest the body on the obstacle.
   Watch FML vs FL and BML vs BL at the ends of the bigger middle swings.
-- **The four front legs lift as high as their Y joints allow** (`CLIMB_FRONT_LIFT_US` = 1100, always clamps
-  at the joint limit) and, on the ground, **push the front of the body up** (`CLIMB_FRONT_PUSH_US` = 300
-  more femur-down, ~40 deg, ~50-60 mm higher - much further and the foot just swings under the body). Back
-  legs lift `CLIMB_LIFT_US` = 550. Front feet use the walk's approach + soft touchdown.
+- Lifts: front four `CLIMB_FRONT_LIFT_US` = 600 (was 1100 = to the Y limit: too high); back-middles
+  `CLIMB_LIFT_US` = 550; BL BR `CLIMB_REAR_LIFT_US` = 350 (quick - the back has no corner support while they
+  step). On the ground the front four push down `CLIMB_FRONT_PUSH_US` = 100 extra (was 300: the nose-up tilt
+  moved the weight back and it fell backwards). Front feet use the walk's approach + soft touchdown.
+- Back legs push further than walking: knee to `CLIMB_REAR_PUSH_KNEE_US` = 450, Y `CLIMB_REAR_PUSH_Y_US` = -200
+  (walk 200 / -140).
 - Entering from the stand pose it staggers the legs first (two tetrapod groups, lift / place / lower): FL FR
   at the back of the stroke, ready to step, the rest 1/4, 1/2, 3/4 along, BR at the front.
 - **Controller:** hold **LT** to climb, how far it is pulled sets the speed (`WALK_MIN_SPEED`..1); release
