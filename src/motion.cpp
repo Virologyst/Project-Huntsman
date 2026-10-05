@@ -1,6 +1,7 @@
 #include "motion.h"
 
 #include "config.h"
+#include "diag.h"
 #include "flags.h"
 #include "term.h"
 #include "pwm.h"
@@ -515,6 +516,8 @@ int climbLift(const char *leg) { return leg[0] == 'F' ? cfg::CLIMB_FRONT_LIFT_US
 // replays the phase from wherever the legs are).
 bool climbPhaseRun(int j, bool (*keepGoing)()) {
     using namespace motion;
+    static const char *const names[] = {"climb: FL FR", "climb: FML FMR", "climb: BML BMR", "climb: BL", "climb: BR"};
+    diag::stage(names[j]);
     bool frontSteps = (j == 0);
     int32_t tSwing = scaled(cfg::CLIMB_SWING_MS), tLower = scaled(cfg::CLIMB_LOWER_MS);
     int32_t tTouch = frontSteps ? scaled(cfg::WALK_FRONT_TOUCHDOWN_MS) : 0;
@@ -558,6 +561,7 @@ bool climbPhaseRun(int j, bool (*keepGoing)()) {
 // (FL FR at the back, ready to step; then 1/4, 1/2, 3/4 along; BR at the front). Two tetrapod groups:
 // lift, place, lower, so no foot drags.
 void enterClimb() {
+    diag::stage("climb: enter");
     for (int i = 0; i < 8; i++) {
         int g = CLIMB_GROUP[i];
         climbP[i] = g == 0 ? 0.0f : 1.0f - (float)(CLIMB_PHASES - 1 - g) / (CLIMB_PHASES - 1);
@@ -656,6 +660,7 @@ bool rampAllCenter(uint16_t ms) {
 }
 
 bool standUp(bool stepMode) {
+    diag::stage("stand");
     inWalk = false;
     inClimb = false;
     Term.println("Stand up (any key aborts and holds).");
@@ -684,6 +689,7 @@ bool canWalk() { return inWalk || inClimb || isStanding(); }
 
 void endWalk() {
     if (!inWalk) return;
+    diag::stage("walk: to stand pose");
     Term.println("Back to the stand pose.");
     placeGroup(GROUP_A, false);
     placeGroup(GROUP_B, false);
@@ -734,6 +740,7 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
         const char *const *stance = nextHalf == 0 ? GROUP_B : GROUP_A;
         int savedMid = midTurn;
         obstacleHit = false;
+        diag::stage(nextHalf == 0 ? "walk: half A" : "walk: half B");
         if (obstacleStop(g) || !halfCycle(swing, stance, g, walkContinue)) {
             midTurn = savedMid;  // resume replays this half-step from wherever the legs are
             if (obstacleHit || obstacleStop(g)) {
@@ -764,6 +771,7 @@ bool inClimbPose() { return inClimb; }
 
 void endClimb() {
     if (!inClimb) return;
+    diag::stage("climb: to stand pose");
     Term.println("Back to the stand pose.");
     placeGroup(GROUP_A, false);
     placeGroup(GROUP_B, false);
@@ -795,6 +803,7 @@ bool climb(int cycles, bool (*keepGoing)()) {
 }
 
 bool sitDown() {
+    diag::stage("sit");
     inWalk = false;
     inClimb = false;
     Term.println("Sit down (any key aborts and holds).");

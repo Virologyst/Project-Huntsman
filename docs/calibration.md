@@ -67,6 +67,18 @@ forward**, so `dir` is +1 when the 1550 move went up/forward and -1 when it went
 | `ident` / `ident confirm` | Warns, then puts a unique width on all 32 outputs: board 1 = `1000 + 20*ch` us, board 2 = `1600 + 20*ch` us |
 | `which 1180` | Decodes a scope reading: `board 1 ch 9 (map says BL K)` |
 
+### Diagnostics
+
+| Command | Effect |
+|---|---|
+| `diag` | last reset reason (power on / update / CRASH / BROWNOUT / watchdog), what it was doing just before, faults in a row, free heap, loop stack left |
+| `reboot` | software restart (also leaves safe mode) |
+
+Every boot prints `Boot #n - last reset: <reason> while '<stage>'`. After `DIAG_SAFE_MODE_RESETS` = 3
+crash / brownout / watchdog resets in a row (each within a minute of booting) it starts in **safe mode**:
+all servos limp, no stand-up, no controller - Wi-Fi and the console stay up so a fix can be uploaded.
+Power off / on or `reboot` leaves it.
+
 ### Settings
 
 `save` writes board clocks and the joint map (including board/channel assignments) to ESP32 flash (survives power cycles and firmware uploads).

@@ -24,6 +24,18 @@ All grounds common.
 - Source: Makita 18 V 6 Ah (~108 Wh), mounted centrally. Makita LXT packs rely on the tool for low-voltage cutoff, so an
   external cutoff (~15 V) or ESP32 monitoring + disconnect is required.
 
+### Resets when legs are blocked (2026-10-05)
+
+The ESP32 resets - even on its own supply - when legs can't move: stalled 55 kg servos draw their stall
+current (several A each). Likely paths: the stall current through shared ground wiring shifts the ESP32 /
+PCA ground (brownout or I2C glitch), or the "separate" supply still hangs off the same battery. A reset then
+re-centres and stands, the blocked leg stalls again: boot loop. Firmware now logs the reset reason
+(`diag`) and drops to a limp **safe mode** after 3 faults in a row. Hardware fixes to try:
+- Servo power returns to the battery on its own heavy ground wire; ESP32 / PCA ground joins it at **one point**
+  (star ground) at the battery / bus bar, not through the servo harness.
+- Large low-ESR capacitors (1000-2200 uF) across each servo power group, close to the servos.
+- ESP32 supply from its own regulator fed straight from the battery terminals (or a separate small battery).
+
 ## ESP32-S3 pins
 
 | GPIO | Use |

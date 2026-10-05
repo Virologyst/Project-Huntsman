@@ -155,6 +155,11 @@ constexpr int CLIMB_SWING_KNEE_US = 1100;      // in the air every stepping leg'
 constexpr uint16_t CLIMB_SWING_MS = 400;      // stepping leg: lift + reach
 constexpr uint16_t CLIMB_LOWER_MS = 250;      // stepping leg: lower (front feet then touch down over WALK_FRONT_TOUCHDOWN_MS)
 
+// ---------- Diagnostics (diag.h) ----------
+constexpr uint32_t LOOP_STACK_BYTES = 16384;   // loop task stack (Arduino default 8192 - too tight for the walk timeline + IK)
+constexpr int DIAG_SAFE_MODE_RESETS = 3;      // this many crash / brownout / watchdog resets in a row -> safe mode
+constexpr uint32_t DIAG_STABLE_MS = 60000;    // up this long = stable: the count clears
+
 // Absolute pulse limits for any output, regardless of joint calibration
 constexpr int HARD_MIN_US = 400;
 constexpr int HARD_MAX_US = 2600;

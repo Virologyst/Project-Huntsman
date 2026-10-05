@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "diag.h"
 #include "term.h"
 #include "motion.h"
 #include "net.h"
@@ -603,6 +604,8 @@ void handle(char *cmdLine) {
     const char *c = tok[0];
 
     if (eq(c, "help") || eq(c, "?")) console::printHelp();
+    else if (eq(c, "diag")) diag::print();
+    else if (eq(c, "reboot")) { Term.println("Rebooting..."); delay(200); ESP.restart(); }
     else if (eq(c, "status")) {
         printStatus();
         if (net::connected())
@@ -696,6 +699,7 @@ void printHelp() {
         "  cal <b> <measured>     correct board clock from scope pulse width (us, or ms e.g. 1.534)\n"
         "  calf <b> <hz>          correct board clock from scope frequency reading\n"
         "  osc <b> <hz> | freq <hz> | status\n"
+        "Diagnostics: diag (last reset reason / stage, memory) | reboot\n"
         "Settings: save | load | defaults"));
 }
 
@@ -706,7 +710,9 @@ void poll() {
             if (lineLen) {
                 line[lineLen] = 0;
                 Term.println();  // the serial monitor echoes typed text locally
+                diag::stage("console command");
                 handle(line);
+                diag::stage("idle");
                 lineLen = 0;
                 Term.print("> ");
             }

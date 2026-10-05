@@ -72,6 +72,9 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - **Controller walk pauses in place on release** (user, 2026-10-05): no return to the stand pose; stays in
   the walk pose and resumes from the current position. A = back to the stand pose. Console walks still
   finish the step and stand.
+- **Diagnostics (diag.h):** reset reason + last stage survive a crash in RTC memory; 3 faults in a row ->
+  limp safe mode with Wi-Fi up. Loop stack raised to 16 KB (walk timeline + IK). Boot loop seen 2026-10-05
+  when legs are blocked - suspected stall current / ground (docs/hardware.md); diag will confirm.
 - **Every ramp eases in/out** (trapezoid, 20%) where a joint starts/stops; stance strokes don't slow at the
   ramp joins. **Walk speed scales with the controller stick** (0.4 to 1).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).

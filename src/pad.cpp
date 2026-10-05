@@ -5,6 +5,7 @@
 #include <XboxSeriesXControllerESP32_asukiaaa.hpp>
 
 #include "config.h"
+#include "diag.h"
 #include "motion.h"
 #include "term.h"
 
@@ -147,6 +148,7 @@ void handle() {
         Term.println("\n[pad] LT: climb (release to pause; pull harder = faster)");
         motion::setSpeed(ltSpeed());
         motion::climb(0, keepClimbing);
+        diag::stage("idle");
         motion::setSpeed(1.0f);
         prevA = n.btnA;
         prevB = n.btnB;
@@ -159,6 +161,7 @@ void handle() {
             Term.println("\n[pad] walk (release to pause; push further = faster)");
             motion::setSpeed(stickSpeed());
             motion::walk(gaitFor(d), 0, keepWalking);
+            diag::stage("idle");
             motion::setSpeed(1.0f);
             walking = Dir::None;
             prevA = n.btnA;  // presses during the walk don't queue a stand / sit
