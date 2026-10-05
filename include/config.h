@@ -44,7 +44,7 @@ constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo fra
 // pose into the walk pose (lift, place, lower) and ends by returning to the stand pose. Each half-cycle:
 // swing group lifts, swings X to base + stride while the stance group pushes X to base - stride, lowers.
 // Walk pose (offsets from neutral, + = knee up / swing forward):
-constexpr int WALK_MID_KNEE_US = -50;       // middle legs: knee out from the stand's -300 -> feet reach out (was -100)
+constexpr int WALK_MID_KNEE_US = -150;      // middle legs: knee out from the stand's -300 (was -50: feet brought in, less strain)
 constexpr int WALK_CORNER_KNEE_US = -200;   // corner legs: straightened a little from -300
 constexpr int WALK_FRONT_SPREAD_US = 400;   // FL FR X base toward the head (~54 deg; was 220, +~25 deg 2026-10-04)
 // Front legs walking forward / back do not stride on X: X holds at the base above and the foot reaches
@@ -53,8 +53,8 @@ constexpr int WALK_FRONT_SPREAD_US = 400;   // FL FR X base toward the head (~54
 // GUESSED values, no leg geometry yet - tune PULL_Y until the planted foot neither lifts nor jacks the body.
 // Knee travel doubled 2026-10-03 (250 -> 500 us): the tucked end stays at the stand tuck, the reach end
 // goes 200 past the knee's neutral; the Y change is doubled with it (40 -> 80).
-constexpr int WALK_FRONT_REACH_KNEE_US = 350;   // knee out: foot far ahead (was 200; reaches further 2026-10-04)
-constexpr int WALK_FRONT_REACH_Y_US = -250;     // Y when the reached foot is set down (was -165: foot stopped ~25 mm up)
+constexpr int WALK_FRONT_REACH_KNEE_US = 260;   // knee out: foot ahead (was 350: reached too far forward, back 25%)
+constexpr int WALK_FRONT_REACH_Y_US = -215;     // Y when the reached foot is set down (was -250 at reach 350; scaled with the shorter reach)
 constexpr int WALK_FRONT_PULL_KNEE_US = -750;   // knee closed at the end of the pull (was -550; stroke 750 -> 1100 us. FR knee min is -768)
 constexpr int WALK_FRONT_PULL_Y_US = 40;        // Y at the end of the pull (was 10: lift back up slightly on the pull)
 // Handover: as one front foot lowers onto the ground, the other (planted, end of its pull) eases Y up by
@@ -76,8 +76,9 @@ constexpr int WALK_REAR_PUSH_Y_US = -140;       // Y at the end of the push (was
 constexpr int WALK_BACK_MID_SPREAD_US = 60; // BML BMR X base toward the tail: clears FML/FMR at the longer stride
 constexpr int WALK_LIFT_US = 350;           // Y up from the stand pose while swinging (was 150: ~10 mm clearance, too low to step over things)
 constexpr int WALK_FRONT_LIFT_US = 500;      // FL FR lift higher than the rest (was 300; raised with WALK_LIFT_US)
-constexpr int WALK_STRIDE_MID_US = 150;     // middle legs X each way from base (~20 deg)
-constexpr int WALK_FML_EXTRA_REACH_US = 46;  // FML only: forward end of its step 30% further (150 -> 196; was 23)
+constexpr int WALK_MID_CYCLES = 2;          // middle legs take this many full steps per corner half-cycle (1 = in step with the corners)
+constexpr int WALK_STRIDE_MID_US = 75;      // middle legs X each way from base per step (was 150 at 1 cycle; halved for 2)
+constexpr int WALK_FML_EXTRA_REACH_US = 23;  // FML only: forward end of its step further (was 46 at stride 150; halved with the stride)
 constexpr int WALK_STRIDE_CORNER_US = 150;  // corner legs X each way from base (turns only)
 // Turning, the back corners stride around a base shifted this far forward: their tail-most point is then
 // the walking base (320). Unshifted (base - stride = 470 toward the tail) they hit the battery and the

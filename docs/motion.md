@@ -44,14 +44,25 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   - Back-middle legs (BML BMR): X base `WALK_BACK_MID_SPREAD_US` = 60 toward the tail, to stay clear of
     the front-middle legs (FMR/BMR touched at stride 150).
   - The body sits lower in the walk pose (expected).
-- Half-cycle, **no pause between strides**: up to three ramps, and the stance group pushes through all of
-  them in proportion to their time, so the body keeps moving:
+- **Middle legs step at their own rate** (`WALK_MID_CYCLES` = 2, 2026-10-05): they take 2 full step cycles
+  per corner half-cycle, with half the stride (`WALK_STRIDE_MID_US` = 75) so the body speed matches, and
+  their feet brought in (`WALK_MID_KNEE_US` = -150). The pairs **BML+FMR** and **FML+BMR** alternate every
+  middle step through the whole walk. Each middle step: lift + swing X (first half), lower (second half);
+  the other pair pushes X back for the whole step. `WALK_MID_CYCLES` = 1 puts them back in step with the
+  corners. **Balance caveat:** at 2x there is a moment each step when a front corner and the middle leg on
+  the same side are both up (e.g. FL + FML, with BR + BMR), leaving FR / FMR / BML / BL - the FMR-BML line
+  runs close to the centre. Watch for the front-left / back-right dipping under load.
+- Corner half-cycle, **no pause between strides**: up to three phases, and the stance corners push through
+  all of them in proportion to their time, so the body keeps moving:
   - **air** (`WALK_SWING_MS` 200, was 400 - X 2x faster): swing legs lift (Y +`WALK_LIFT_US`) and swing X
     to the start of their next stroke at the same time;
   - **down** (`WALK_LIFT_MS` 200): swing legs lower (front feet to `WALK_FRONT_APPROACH_US` above the ground);
   - **touch** (`WALK_FRONT_TOUCHDOWN_MS` 300): front feet set down slowly; handover.
   The corner-leg knee strokes (750-1100 us) run over air + down - too far for a 55 kg servo in 200 ms.
   About 700 ms per half-cycle at full speed.
+- The walk runs as a **timeline** (`Timeline` in motion.cpp): every joint has its own timed segments
+  (start, end, target, easing) played together each 20 ms frame - that is what lets the middle legs step at
+  a different rate from the corners.
 - **Easing on every move** (`EASE_FRACTION` = 0.2): a joint speeds up over the first 20% of a ramp where it
   starts and slows over the last 20% where it stops or changes direction. A joint that carries on the same
   way into the next ramp (stance legs pushing through air -> down -> touch) is not slowed at the join.
@@ -83,11 +94,12 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `WALK_MID_KNEE_US` | -50 | middle-leg knee in the walk pose |
+| `WALK_MID_KNEE_US` | -150 | middle-leg knee in the walk pose (was -50: feet brought in) |
+| `WALK_MID_CYCLES` | 2 | middle-leg step cycles per corner half-cycle (1 = in step with the corners) |
 | `WALK_CORNER_KNEE_US` | -200 | corner-leg knee in the walk pose |
 | `WALK_FRONT_SPREAD_US` | 400 | FL FR X base toward the head (~54 deg; was 220) |
-| `WALK_FRONT_REACH_KNEE_US` | 350 | front-leg knee at full reach (was 200) |
-| `WALK_FRONT_REACH_Y_US` | -250 | front-leg Y when the reached foot is set down (was -165: foot stopped ~25 mm above the ground, body then dropped onto it mid-pull) |
+| `WALK_FRONT_REACH_KNEE_US` | 260 | front-leg knee at full reach (was 350: too far forward, back 25%) |
+| `WALK_FRONT_REACH_Y_US` | -215 | front-leg Y when the reached foot is set down (-250 at reach 350; scaled with the shorter reach - check the toe still lands) |
 | `WALK_FRONT_PULL_KNEE_US` | -750 | front-leg knee at the end of the pull (was -550; FR knee limit is -768) |
 | `WALK_FRONT_PULL_Y_US` | 40 | front-leg Y at the end of the pull (was 10) |
 | `WALK_FRONT_APPROACH_US` | 100 | front feet stop this far above the set-down Y at normal speed ... |
@@ -101,8 +113,8 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_BACK_MID_SPREAD_US` | 60 | BML BMR X base toward the tail (middle-leg clearance) |
 | `WALK_LIFT_US` | 350 | Y up from the stand pose during swing (was 150: only ~10 mm clearance) |
 | `WALK_FRONT_LIFT_US` | 500 | same, for FL FR only (was 300) |
-| `WALK_STRIDE_MID_US` | 150 | middle-leg X each way from base (~20 deg) |
-| `WALK_FML_EXTRA_REACH_US` | 46 | FML only: forward end of its step 30% further (150 -> 196; was 23) |
+| `WALK_STRIDE_MID_US` | 75 | middle-leg X each way from base per middle step (150 at 1 cycle) |
+| `WALK_FML_EXTRA_REACH_US` | 23 | FML only: forward end of its step further (46 at stride 150, halved with it) |
 | `WALK_STRIDE_CORNER_US` | 150 | corner-leg X each way from base (turns only) |
 | `WALK_LIFT_MS` | 200 | lift / lower ramp |
 | `WALK_SWING_MS` | 400 | swing / push ramp |

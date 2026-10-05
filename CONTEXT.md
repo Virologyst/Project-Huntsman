@@ -65,6 +65,9 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - **Climb is manual (controller LT / `climb`), not ToF-triggered** (user, 2026-10-05). The ToF only raises the
   front legs' lift while something is < 30 mm ahead. The `CLIMB` flag path is kept behind
   `TOF_AUTO_CLIMB` = false. VL53L0X on its own I2C bus (Wire1, GPIO 17/18), Pololu library, non-blocking.
+- **Middle legs step 2x per corner half-cycle** (user idea, 2026-10-05) at half stride with feet brought in,
+  to cut middle-servo strain; walk is now a per-joint timeline. Balance caveat noted in docs/motion.md.
+  `WALK_MID_CYCLES` = 1 reverts. Untested.
 - **Every ramp eases in/out** (trapezoid, 20%) where a joint starts/stops; stance strokes don't slow at the
   ramp joins. **Walk speed scales with the controller stick** (0.4 to 1).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).

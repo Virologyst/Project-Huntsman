@@ -7,6 +7,10 @@
 #include "servo_map.h"
 #include "tof.h"
 
+namespace motion {
+float progress(float t, uint8_t ease);  // easing curve, defined below
+}
+
 namespace {
 
 bool aborted() {
@@ -144,75 +148,153 @@ int32_t scaled(uint16_t ms) { return max<int32_t>(cfg::FRAME_MS, (int32_t)(ms / 
 
 int startPos(int joint, int fallback) { return servos::position(joint) ? servos::position(joint) : fallback; }
 
-// Half a gait cycle in up to three ramps. The stance legs push through all of them (speeding up at the
-// start of their stroke and slowing at the end, but not at the joins), so the body keeps moving:
-//   air   - swing legs lift and swing X to the next stroke start
-//   down  - swing legs lower; front feet stop WALK_FRONT_APPROACH_US above the ground
-//   touch - front feet set down slowly (servos can't follow a fast drop), and the planted front foot eases
-//           up a little (handover) so the body settles onto the new foot
-// The big corner-leg knee strokes (750-1100 us) are spread over air + down: too far for the air ramp alone.
+// A walk half-cycle as a timeline: every joint gets its own timed segments (start ms, end ms, target,
+// easing), all played together frame by frame. Lets the middle legs step at a different rate from the
+// corner legs inside the same half-cycle.
+struct Timeline {
+    struct Seg {
+        int joint;
+        int32_t t0, t1;
+        int target;
+        uint8_t ease;
+        int from;
+        bool started, done;
+    };
+    Seg seg[96];
+    int n = 0;
+
+    // Segments for one joint must be added in time order (each starts from where the previous one ended)
+    void addRaw(int joint, int32_t t0, int32_t t1, int target, uint8_t ease) {
+        if (n < 96) seg[n++] = {joint, t0, max(t1, t0 + 1), target, ease, 0, false, false};
+    }
+    void add(const char *leg, char type, int32_t t0, int32_t t1, int offsetUs, uint8_t ease) {
+        int i = servos::find(leg, type);
+        addRaw(i, t0, t1, servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir, ease);
+    }
+    void run(int32_t total) {
+        for (int32_t t = cfg::FRAME_MS;; t += cfg::FRAME_MS) {
+            if (t > total) t = total;
+            uint32_t frame = millis();
+            for (int k = 0; k < n; k++) {
+                Seg &sg = seg[k];
+                if (sg.done || t <= sg.t0) continue;
+                if (!sg.started) {
+                    int now = servos::position(sg.joint);
+                    sg.from = now ? now : sg.target;
+                    sg.started = true;
+                }
+                float p = (float)(t - sg.t0) / (sg.t1 - sg.t0);
+                if (p >= 1.0f) {
+                    p = 1.0f;
+                    sg.done = true;
+                }
+                servos::moveRaw(sg.joint, sg.from + (int)lroundf((sg.target - sg.from) * motion::progress(p, sg.ease)));
+            }
+            if (t >= total) break;
+            while (millis() - frame < cfg::FRAME_MS) {}
+        }
+    }
+};
+
+// Middle legs step in their own pairs, alternating every middle sub-cycle across the whole walk
+const char *const MID_1[] = {"BML", "FMR"};  // the middle legs of group A
+const char *const MID_2[] = {"FML", "BMR"};  // the middle legs of group B
+int midTurn = 0;                              // middle sub-cycles so far this walk (even = MID_1 swings)
+
+// Half a gait cycle (one corner pair swings, the other pushes). Corner legs, three phases:
+//   air   - swing corners lift and swing to the next stroke start (big knee strokes carry on into down)
+//   down  - swing corners lower; front feet stop WALK_FRONT_APPROACH_US above the ground
+//   touch - front feet set down slowly (servos can't follow a fast drop); the planted front foot eases up
+//           a little (handover) so the body settles onto the new foot
+// The stance corners push through all three (easing only at the start and end of their stroke).
+// Middle legs run WALK_MID_CYCLES full step cycles in the same time with a stride scaled to match.
 void halfCycle(const char *const swing[], const char *const stance[], motion::Gait g) {
     using namespace motion;
-    Pose air, down, touch, swingK, stanceEnd, handover;
     bool forward = g == Gait::Forward;
-    for (int k = 0; k < 4; k++) {
-        // Swing leg (walking forward a front leg sets down extended and a back leg tucked; back, the reverse)
-        air.add(swing[k], 'Y', cfg::STAND_PUSH_US + walkLift(swing[k]), EASE_BOTH);
-        bool frontCorner = isCorner(swing[k]) && isFront(swing[k]);
-        int groundY = cfg::STAND_PUSH_US;
-        if (kneeStroke(swing[k], g)) {
-            bool extended = isFront(swing[k]) == forward;
-            swingK.add(swing[k], 'K', strokeK(swing[k], extended));
-            groundY = strokeY(swing[k], extended);
-        } else {
-            air.add(swing[k], 'X', strideEnd(swing[k], strideSign(swing[k], g), g), EASE_BOTH);
-        }
-        if (frontCorner) {
-            down.add(swing[k], 'Y', groundY + cfg::WALK_FRONT_APPROACH_US, EASE_IN);
-            touch.add(swing[k], 'Y', groundY, EASE_SOFT);
-        } else {
-            down.add(swing[k], 'Y', groundY, EASE_BOTH);
-        }
-        // Stance leg: on the ground to the end of its stroke
-        if (kneeStroke(stance[k], g)) {
-            bool extended = isFront(stance[k]) != forward;
-            stanceEnd.add(stance[k], 'K', strokeK(stance[k], extended));
-            stanceEnd.add(stance[k], 'Y', strokeY(stance[k], extended));
-            if (isFront(stance[k]))
-                handover.add(stance[k], 'Y', strokeY(stance[k], extended) + cfg::WALK_FRONT_HANDOVER_US);
-        } else {
-            stanceEnd.add(stance[k], 'X', strideEnd(stance[k], -strideSign(stance[k], g), g));
-        }
-    }
+    bool hasTouch = false;
+    for (int k = 0; k < 4; k++)
+        if (isCorner(swing[k]) && isFront(swing[k])) hasTouch = true;
 
-    // signed: an unsigned time here turns a negative (end - start) into a huge value -> wild joint moves
-    bool hasTouch = touch.n || handover.n;
+    // signed: an unsigned time turns a negative (end - start) into a huge value -> wild joint moves
     int32_t tAir = scaled(cfg::WALK_SWING_MS), tDown = scaled(cfg::WALK_LIFT_MS);
     int32_t tTouch = hasTouch ? scaled(cfg::WALK_FRONT_TOUCHDOWN_MS) : 0;
-    int32_t total = tAir + tDown + tTouch;
+    int32_t tLanded = tAir + tDown, total = tLanded + tTouch;
+    Timeline tl;
 
-    // Swing knees: speed up in air, slow down at the end of down
-    for (int k = 0; k < swingK.n; k++) {
-        int j = swingK.joints[k], end = swingK.targets[k], start = startPos(j, end);
-        air.addRaw(j, start + (end - start) * tAir / (tAir + tDown), EASE_IN);
-        down.addRaw(j, end, EASE_OUT);
-    }
-    // Stance: spread in proportion to the ramp times; ease only at the stroke's start and end
-    for (int k = 0; k < stanceEnd.n; k++) {
-        int j = stanceEnd.joints[k], end = stanceEnd.targets[k], start = startPos(j, end);
-        air.addRaw(j, start + (end - start) * tAir / total, EASE_IN);
-        if (hasTouch) {
-            down.addRaw(j, start + (end - start) * (tAir + tDown) / total, EASE_NONE);
-            int h = handover.find(j);
-            if (h >= 0) touch.addRaw(j, handover.targets[h], EASE_SOFT);
-            else touch.addRaw(j, end, EASE_OUT);
+    // ---- corner legs ----
+    for (int k = 0; k < 4; k++) {
+        const char *leg = swing[k];
+        if (!isCorner(leg)) continue;
+        bool front = isFront(leg);
+        int groundY = cfg::STAND_PUSH_US;
+        tl.add(leg, 'Y', 0, tAir, cfg::STAND_PUSH_US + walkLift(leg), EASE_BOTH);
+        if (kneeStroke(leg, g)) {
+            bool extended = front == forward;
+            int i = servos::find(leg, 'K');
+            int end = servos::joints[i].neutralUs + strokeK(leg, extended) * servos::joints[i].dir;
+            int start = startPos(i, end);
+            tl.addRaw(i, 0, tAir, start + (end - start) * tAir / tLanded, EASE_IN);
+            tl.addRaw(i, tAir, tLanded, end, EASE_OUT);
+            groundY = strokeY(leg, extended);
         } else {
-            down.addRaw(j, end, EASE_OUT);
+            tl.add(leg, 'X', 0, tAir, strideEnd(leg, strideSign(leg, g), g), EASE_BOTH);
+        }
+        if (front) {
+            tl.add(leg, 'Y', tAir, tLanded, groundY + cfg::WALK_FRONT_APPROACH_US, EASE_IN);
+            tl.add(leg, 'Y', tLanded, total, groundY, EASE_SOFT);
+        } else {
+            tl.add(leg, 'Y', tAir, tLanded, groundY, EASE_BOTH);
         }
     }
-    air.run(tAir);
-    down.run(tDown);
-    if (hasTouch) touch.run(tTouch);
+    for (int k = 0; k < 4; k++) {
+        const char *leg = stance[k];
+        if (!isCorner(leg)) continue;
+        // stroke end offsets per joint, then spread over the phases in proportion to their time
+        char types[2];
+        int offs[2], count = 0;
+        bool extended = false;
+        if (kneeStroke(leg, g)) {
+            extended = isFront(leg) != forward;
+            types[count] = 'K'; offs[count++] = strokeK(leg, extended);
+            types[count] = 'Y'; offs[count++] = strokeY(leg, extended);
+        } else {
+            types[count] = 'X'; offs[count++] = strideEnd(leg, -strideSign(leg, g), g);
+        }
+        for (int c = 0; c < count; c++) {
+            int i = servos::find(leg, types[c]);
+            int end = servos::joints[i].neutralUs + offs[c] * servos::joints[i].dir;
+            int start = startPos(i, end);
+            tl.addRaw(i, 0, tAir, start + (end - start) * tAir / total, EASE_IN);
+            if (!hasTouch) {
+                tl.addRaw(i, tAir, total, end, EASE_OUT);
+                continue;
+            }
+            tl.addRaw(i, tAir, tLanded, start + (end - start) * tLanded / total, EASE_NONE);
+            if (types[c] == 'Y' && isFront(leg)) {  // handover
+                int h = end + cfg::WALK_FRONT_HANDOVER_US * servos::joints[i].dir;
+                tl.addRaw(i, tLanded, total, h, EASE_SOFT);
+            } else {
+                tl.addRaw(i, tLanded, total, end, EASE_OUT);
+            }
+        }
+    }
+
+    // ---- middle legs: WALK_MID_CYCLES step cycles, pairs alternating ----
+    int cycles = max(1, cfg::WALK_MID_CYCLES);
+    int32_t sub = total / cycles;
+    int32_t subAir = sub * cfg::WALK_SWING_MS / (cfg::WALK_SWING_MS + cfg::WALK_LIFT_MS);
+    for (int c = 0; c < cycles; c++, midTurn++) {
+        int32_t s0 = c * sub, s1 = (c == cycles - 1) ? total : s0 + sub;
+        const char *const *up = (midTurn % 2 == 0) ? MID_1 : MID_2;
+        const char *const *down = (midTurn % 2 == 0) ? MID_2 : MID_1;
+        for (int k = 0; k < 2; k++) {
+            tl.add(up[k], 'Y', s0, s0 + subAir, cfg::STAND_PUSH_US + walkLift(up[k]), EASE_BOTH);
+            tl.add(up[k], 'X', s0, s0 + subAir, strideEnd(up[k], strideSign(up[k], g), g), EASE_BOTH);
+            tl.add(up[k], 'Y', s0 + subAir, s1, cfg::STAND_PUSH_US, EASE_BOTH);
+            tl.add(down[k], 'X', s0, s1, strideEnd(down[k], -strideSign(down[k], g), g), EASE_BOTH);
+        }
+    }
+    tl.run(total);
 }
 
 // Lift one group, move its X and K to the given pose, lower it (feet never drag)
@@ -333,6 +415,7 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
     Term.println(keepGoing ? " - release (or any key) stops after the current step."
                            : " - any key stops after the current step.");
 
+    midTurn = 0;  // middle pair 1 (BML FMR) steps first, as group A's middle legs
     placeGroup(GROUP_A, true, g);  // into the walk pose, one group at a time
     placeGroup(GROUP_B, true, g);
     bool stop = stopRequested(keepGoing);
