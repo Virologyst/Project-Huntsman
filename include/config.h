@@ -53,8 +53,8 @@ constexpr int WALK_FRONT_SPREAD_US = 400;   // FL FR X base toward the head (~54
 // GUESSED values, no leg geometry yet - tune PULL_Y until the planted foot neither lifts nor jacks the body.
 // Knee travel doubled 2026-10-03 (250 -> 500 us): the tucked end stays at the stand tuck, the reach end
 // goes 200 past the knee's neutral; the Y change is doubled with it (40 -> 80).
-constexpr int WALK_FRONT_REACH_KNEE_US = 260;   // knee out: foot ahead (was 350: reached too far forward, back 25%)
-constexpr int WALK_FRONT_REACH_Y_US = -215;     // Y when the reached foot is set down (was -250 at reach 350; scaled with the shorter reach)
+constexpr int WALK_FRONT_REACH_KNEE_US = 100;   // knee out: foot ahead (was 260: front legs worked too far from the body)
+constexpr int WALK_FRONT_REACH_Y_US = -150;     // Y when the reached foot is set down (was -215 at reach 260; scaled with the shorter reach)
 constexpr int WALK_FRONT_PULL_KNEE_US = -750;   // knee closed at the end of the pull (was -550; stroke 750 -> 1100 us. FR knee min is -768)
 constexpr int WALK_FRONT_PULL_Y_US = 40;        // Y at the end of the pull (was 10: lift back up slightly on the pull)
 // Handover: as one front foot lowers onto the ground, the other (planted, end of its pull) eases Y up by
@@ -74,6 +74,7 @@ constexpr int WALK_REAR_TUCK_Y_US = -20;        // Y when the tucked foot is set
 constexpr int WALK_REAR_PUSH_KNEE_US = 200;     // knee out at the end of the push (was -50, travel doubled)
 constexpr int WALK_REAR_PUSH_Y_US = -140;       // Y at the end of the push (was -100)
 constexpr int WALK_BACK_MID_SPREAD_US = 60; // BML BMR X base toward the tail: clears FML/FMR at the longer stride
+constexpr int WALK_MID_LIFT_US = 550;       // middle legs: their swing is only ~175 ms at 2 cycles, so aim higher to clear the ground
 constexpr int WALK_LIFT_US = 350;           // Y up from the stand pose while swinging (was 150: ~10 mm clearance, too low to step over things)
 constexpr int WALK_FRONT_LIFT_US = 500;      // FL FR lift higher than the rest (was 300; raised with WALK_LIFT_US)
 constexpr int WALK_MID_CYCLES = 2;          // middle legs take this many full steps per corner half-cycle (1 = in step with the corners)

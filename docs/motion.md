@@ -116,8 +116,8 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_MID_CYCLES` | 2 | middle-leg step cycles per corner half-cycle (1 = in step with the corners) |
 | `WALK_CORNER_KNEE_US` | -200 | corner-leg knee in the walk pose |
 | `WALK_FRONT_SPREAD_US` | 400 | FL FR X base toward the head (~54 deg; was 220) |
-| `WALK_FRONT_REACH_KNEE_US` | 260 | front-leg knee at full reach (was 350: too far forward, back 25%) |
-| `WALK_FRONT_REACH_Y_US` | -215 | front-leg Y when the reached foot is set down (-250 at reach 350; scaled with the shorter reach - check the toe still lands) |
+| `WALK_FRONT_REACH_KNEE_US` | 100 | front-leg knee at full reach (was 260: worked too far from the body) |
+| `WALK_FRONT_REACH_Y_US` | -150 | front-leg Y when the reached foot is set down (-215 at reach 260; scaled with the shorter reach - check the toe still lands) |
 | `WALK_FRONT_PULL_KNEE_US` | -750 | front-leg knee at the end of the pull (was -550; FR knee limit is -768) |
 | `WALK_FRONT_PULL_Y_US` | 40 | front-leg Y at the end of the pull (was 10) |
 | `WALK_FRONT_APPROACH_US` | 100 | front feet stop this far above the set-down Y at normal speed ... |
@@ -129,6 +129,7 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_REAR_PUSH_KNEE_US` | 200 | back-leg knee at the end of the push (was -50: knee travel doubled to 500 us) |
 | `WALK_REAR_PUSH_Y_US` | -140 | back-leg Y at the end of the push (was -100) |
 | `WALK_BACK_MID_SPREAD_US` | 60 | BML BMR X base toward the tail (middle-leg clearance) |
+| `WALK_MID_LIFT_US` | 550 | middle-leg lift: their swing is only ~175 ms, so aim higher to actually clear the ground |
 | `WALK_LIFT_US` | 350 | Y up from the stand pose during swing (was 150: only ~10 mm clearance) |
 | `WALK_FRONT_LIFT_US` | 500 | same, for FL FR only (was 300) |
 | `WALK_STRIDE_MID_US` | 75 | middle-leg X each way from base per middle step (150 at 1 cycle) |

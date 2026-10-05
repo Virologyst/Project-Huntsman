@@ -123,7 +123,8 @@ bool isFront(const char *leg) { return leg[0] == 'F'; }
 // Y lift above the stand pose while a leg is in the air: the front corner legs lift higher
 // ... and higher still while the ToF sees something close in front (cfg::TOF_NEAR_MM)
 int walkLift(const char *leg) {
-    if (!(isCorner(leg) && isFront(leg))) return cfg::WALK_LIFT_US;
+    if (!isCorner(leg)) return cfg::WALK_MID_LIFT_US;
+    if (!isFront(leg)) return cfg::WALK_LIFT_US;
     return cfg::WALK_FRONT_LIFT_US + (tof::obstacle() ? cfg::WALK_FRONT_OBSTACLE_LIFT_US : 0);
 }
 
