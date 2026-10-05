@@ -67,7 +67,7 @@ Dir walking = Dir::None;
 bool keepWalking() {
     xbox.onLoop();
     if (!ready() || requested() != walking) return false;
-    motion::setSpeed(stickSpeed());  // checked every half step, so speed follows the stick
+    motion::setSpeed(stickSpeed());  // checked every frame; the new speed applies from the next half step
     return true;
 }
 
@@ -110,8 +110,13 @@ void handle() {
     prevLT = lt;
 
     if (pressA) {
-        Term.println("\n[pad] A: stand");
-        motion::standUp(false);
+        if (motion::inWalkPose()) {
+            Term.println("\n[pad] A: stand pose");
+            motion::endWalk();
+        } else {
+            Term.println("\n[pad] A: stand");
+            motion::standUp(false);
+        }
         Term.print("> ");
     } else if (pressB) {
         Term.println("\n[pad] B: sit");
@@ -128,9 +133,9 @@ void handle() {
         Term.print("> ");
     } else {
         Dir d = requested();
-        if (d != Dir::None && motion::isStanding()) {
+        if (d != Dir::None && motion::canWalk()) {
             walking = d;
-            Term.println("\n[pad] walk (release to stop; push further = faster)");
+            Term.println("\n[pad] walk (release to pause; push further = faster)");
             motion::setSpeed(stickSpeed());
             motion::walk(gaitFor(d), 0, keepWalking);
             motion::setSpeed(1.0f);

@@ -171,7 +171,8 @@ struct Timeline {
         int i = servos::find(leg, type);
         addRaw(i, t0, t1, servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir, ease);
     }
-    void run(int32_t total) {
+    // keepGoing (optional) is checked every frame: false = stop right there and hold (returns false)
+    bool run(int32_t total, bool (*keepGoing)() = nullptr) {
         for (int32_t t = cfg::FRAME_MS;; t += cfg::FRAME_MS) {
             if (t > total) t = total;
             uint32_t frame = millis();
@@ -191,8 +192,11 @@ struct Timeline {
                 servos::moveRaw(sg.joint, sg.from + (int)lroundf((sg.target - sg.from) * motion::progress(p, sg.ease)));
             }
             if (t >= total) break;
+            tof::handle();  // frames block loop(), so sample here (drives the front legs' obstacle lift)
+            if (keepGoing && !keepGoing()) return false;
             while (millis() - frame < cfg::FRAME_MS) {}
         }
+        return true;
     }
 };
 
@@ -200,6 +204,8 @@ struct Timeline {
 const char *const MID_1[] = {"BML", "FMR"};  // the middle legs of group A
 const char *const MID_2[] = {"FML", "BMR"};  // the middle legs of group B
 int midTurn = 0;                              // middle sub-cycles so far this walk (even = MID_1 swings)
+bool inWalk = false;                          // legs are in the walk pose (paused or walking)
+int nextHalf = 0;                             // 0 = group A swings next, 1 = group B
 
 // Half a gait cycle (one corner pair swings, the other pushes). Corner legs, three phases:
 //   air   - swing corners lift and swing to the next stroke start (big knee strokes carry on into down)
@@ -208,7 +214,11 @@ int midTurn = 0;                              // middle sub-cycles so far this w
 //           a little (handover) so the body settles onto the new foot
 // The stance corners push through all three (easing only at the start and end of their stroke).
 // Middle legs run WALK_MID_CYCLES full step cycles in the same time with a stride scaled to match.
-void halfCycle(const char *const swing[], const char *const stance[], motion::Gait g) {
+// Returns false if keepGoing stopped it part-way (every joint holds where it is).
+// Swing legs set all three joints each step, so the gait settles back into shape within a step from any
+// paused position or after a change of direction.
+bool halfCycle(const char *const swing[], const char *const stance[], motion::Gait g,
+               bool (*keepGoing)() = nullptr) {
     using namespace motion;
     bool forward = g == Gait::Forward;
     bool hasTouch = false;
@@ -236,8 +246,10 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
             tl.addRaw(i, 0, tAir, start + (end - start) * tAir / tLanded, EASE_IN);
             tl.addRaw(i, tAir, tLanded, end, EASE_OUT);
             groundY = strokeY(leg, extended);
+            tl.add(leg, 'X', 0, tAir, walkBaseX(leg, g), EASE_BOTH);  // X holds at base for knee strokes
         } else {
             tl.add(leg, 'X', 0, tAir, strideEnd(leg, strideSign(leg, g), g), EASE_BOTH);
+            tl.add(leg, 'K', 0, tAir, walkKnee(leg), EASE_BOTH);
         }
         if (front) {
             tl.add(leg, 'Y', tAir, tLanded, groundY + cfg::WALK_FRONT_APPROACH_US, EASE_IN);
@@ -290,11 +302,12 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
         for (int k = 0; k < 2; k++) {
             tl.add(up[k], 'Y', s0, s0 + subAir, cfg::STAND_PUSH_US + walkLift(up[k]), EASE_BOTH);
             tl.add(up[k], 'X', s0, s0 + subAir, strideEnd(up[k], strideSign(up[k], g), g), EASE_BOTH);
+            if (c == 0) tl.add(up[k], 'K', s0, s0 + subAir, walkKnee(up[k]), EASE_BOTH);
             tl.add(up[k], 'Y', s0 + subAir, s1, cfg::STAND_PUSH_US, EASE_BOTH);
             tl.add(down[k], 'X', s0, s1, strideEnd(down[k], -strideSign(down[k], g), g), EASE_BOTH);
         }
     }
-    tl.run(total);
+    return tl.run(total, keepGoing);
 }
 
 // Lift one group, move its X and K to the given pose, lower it (feet never drag)
@@ -383,6 +396,7 @@ bool rampAllCenter(uint16_t ms) {
 }
 
 bool standUp(bool stepMode) {
+    inWalk = false;
     Term.println("Stand up (any key aborts and holds).");
     if (stepMode && !waitStep("all joints to centre")) return false;
     Term.println("all joints to centre ...");
@@ -403,8 +417,22 @@ bool isStanding() {
     return true;
 }
 
+bool inWalkPose() { return inWalk; }
+
+bool canWalk() { return inWalk || isStanding(); }
+
+void endWalk() {
+    if (!inWalk) return;
+    Term.println("Back to the stand pose.");
+    placeGroup(GROUP_A, false);
+    placeGroup(GROUP_B, false);
+    inWalk = false;
+}
+
+void resetWalk() { inWalk = false; }
+
 bool walk(Gait g, int cycles, bool (*keepGoing)()) {
-    if (!isStanding()) {
+    if (!canWalk()) {
         Term.println("Not in the stand pose - run 'stand' first.");
         return false;
     }
@@ -412,22 +440,38 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
                      : g == Gait::TurnLeft ? "turn left" : "turn right";
     Term.printf("Walking %s", name);
     if (cycles) Term.printf(", %d cycles", cycles);
-    Term.println(keepGoing ? " - release (or any key) stops after the current step."
+    Term.println(keepGoing ? " - release to pause (everything holds where it is)."
                            : " - any key stops after the current step.");
 
-    midTurn = 0;  // middle pair 1 (BML FMR) steps first, as group A's middle legs
-    placeGroup(GROUP_A, true, g);  // into the walk pose, one group at a time
-    placeGroup(GROUP_B, true, g);
-    bool stop = stopRequested(keepGoing);
-    for (int c = 0; !stop && (cycles == 0 || c < cycles); c++) {
-        halfCycle(GROUP_A, GROUP_B, g);
-        stop = stopRequested(keepGoing);
-        if (stop) break;
-        halfCycle(GROUP_B, GROUP_A, g);
-        stop = stopRequested(keepGoing);
+    if (!inWalk) {
+        midTurn = 0;      // middle pair 1 (BML FMR) steps first, as group A's middle legs
+        nextHalf = 0;     // group A swings first
+        placeGroup(GROUP_A, true, g);  // into the walk pose, one group at a time
+        placeGroup(GROUP_B, true, g);
+        inWalk = true;
     }
-    placeGroup(GROUP_A, false);  // back to the stand pose
-    placeGroup(GROUP_B, false);
+
+    // Controller: pause mid-step the moment the stick is released and stay in the walk pose.
+    // Console: finish the current step on a key / after the cycles, then back to the stand pose.
+    for (int halves = 0; cycles == 0 || halves < cycles * 2; halves++) {
+        const char *const *swing = nextHalf == 0 ? GROUP_A : GROUP_B;
+        const char *const *stance = nextHalf == 0 ? GROUP_B : GROUP_A;
+        int savedMid = midTurn;
+        if (!halfCycle(swing, stance, g, keepGoing)) {
+            midTurn = savedMid;  // resume replays this half-step from wherever the legs are
+            Term.println("Paused - holding. Push the stick to carry on, A = stand pose, B = sit.");
+            return true;
+        }
+        nextHalf ^= 1;
+        if (stopRequested(keepGoing)) {
+            if (keepGoing) {
+                Term.println("Paused - holding. Push the stick to carry on, A = stand pose, B = sit.");
+                return true;
+            }
+            break;
+        }
+    }
+    endWalk();
     Term.println(flags::test(flags::CLIMB) ? "Stopped - obstacle ahead, standing." : "Stopped - standing.");
     return true;
 }
@@ -452,6 +496,7 @@ bool climb() {
 }
 
 bool sitDown() {
+    inWalk = false;
     Term.println("Sit down (any key aborts and holds).");
     return step(false, "Y to centre - lowering the body", 'Y', 0, cfg::STAND_PUSH_MS) &&
            step(false, "K to centre", 'K', 0, cfg::STAND_RAMP_MS) &&

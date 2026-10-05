@@ -18,17 +18,17 @@ the address into `cfg::PAD_ADDRESS`.
 
 | Input | Action |
 |---|---|
-| **A** | stand (same as `stand`) |
+| **A** | stand (same as `stand`); from a paused walk, back to the stand pose |
 | **B** | sit (same as `sit`) |
-| Left stick / D-pad **up** | walk forward while held |
+| Left stick / D-pad **up** | walk forward while held (release = pause in place) |
 | Left stick / D-pad **down** | walk back while held |
 | Left stick / D-pad **left / right** | turn left / right while held |
 | **Left trigger** (LT) | climb (from the stand pose; same as `climb` - sequence still a stub) |
 
-- Walking only starts from the stand pose - press **A** first.
-- Releasing the stick, changing direction, or the controller disconnecting stops the walk the same way a
-  key does: the current step finishes, then the legs go back to the stand pose. A new direction
-  starts after that.
+- Walking starts from the stand pose (press **A** first) or carries on from a paused walk.
+- **Releasing the stick pauses in place:** every joint stops mid-step and holds. Changing direction or the
+  controller disconnecting does the same. Push the stick to carry on (any direction) - it resumes from
+  where the legs are. **A** returns to the stand pose, **B** sits.
 - The stick must pass half travel (`PAD_DEADZONE` = 0.5); the larger axis wins. D-pad overrides the stick.
 - **Push further = faster:** walk speed goes from `WALK_MIN_SPEED` (0.4) just past the dead zone to full
   speed at full push, re-read every half step. The D-pad always walks at full speed.

@@ -88,9 +88,17 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 - **Turning, the back corners stride around a base shifted `WALK_TURN_REAR_SHIFT_US` = 150 forward**, so
   their tail-most point is the walking base (320). Unshifted they reached 470 toward the tail, hit the
   battery and browned out the ESP32.
-- `walk 4` = 4 full cycles; `walk` alone = until Enter. Stopping **finishes the current step**, then returns
-  to the stand pose.
-- Requires the stand pose (Y and K exactly at stand values); otherwise it says to run `stand`.
+- **Controller: release = pause in place** (2026-10-05). The moment the stick is released (or turned to a
+  new direction, or the controller drops) every joint stops mid-step and holds - no finishing the step, no
+  return to the stand pose. The legs stay in the **walk pose**; pushing the stick again replays the
+  interrupted half-step from wherever the legs are. A change of direction starts the new gait from there:
+  swing legs set all three joints every step, so the gait settles back into shape within a step. **A** from
+  the walk pose goes back to the stand pose properly (`endWalk`: each group lifts, places, lowers); **B**
+  sits. If it pauses with a tetrapod group in the air it simply holds on the other four.
+- Console: `walk 4` = 4 full cycles; `walk` alone = until Enter. Stopping **finishes the current step**,
+  then returns to the stand pose. A console walk also carries on from a paused controller walk.
+- Starts from the stand pose or the walk pose; otherwise it says to run `stand`. `limp`, `stand` and `sit`
+  forget the walk pose.
 
 | Constant | Value | Meaning |
 |---|---|---|

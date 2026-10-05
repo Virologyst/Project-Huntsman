@@ -617,7 +617,7 @@ void handle(char *cmdLine) {
     else if (eq(c, "map")) servos::printTable();
     else if (eq(c, "export")) servos::printExport();
     else if (eq(c, "all") || eq(c, "neutral")) { servos::allNeutral(); Term.println("All joints to neutral."); }
-    else if (eq(c, "limp")) { pwm::allOff(); Term.println("All outputs off."); }
+    else if (eq(c, "limp")) { pwm::allOff(); motion::resetWalk(); Term.println("All outputs off."); }
     else if (eq(c, "setmin") || eq(c, "setmax") || eq(c, "setneutral")) cmdSetLimit(tok, n);
     else if (eq(c, "setdir")) cmdSetDir(tok, n);
     else if (eq(c, "assign")) cmdAssign(tok, n);

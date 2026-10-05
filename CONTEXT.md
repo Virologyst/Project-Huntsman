@@ -68,6 +68,9 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - **Middle legs step 2x per corner half-cycle** (user idea, 2026-10-05) at half stride with feet brought in,
   to cut middle-servo strain; walk is now a per-joint timeline. Balance caveat noted in docs/motion.md.
   `WALK_MID_CYCLES` = 1 reverts. Untested.
+- **Controller walk pauses in place on release** (user, 2026-10-05): no return to the stand pose; stays in
+  the walk pose and resumes from the current position. A = back to the stand pose. Console walks still
+  finish the step and stand.
 - **Every ramp eases in/out** (trapezoid, 20%) where a joint starts/stops; stance strokes don't slow at the
   ramp joins. **Walk speed scales with the controller stick** (0.4 to 1).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).

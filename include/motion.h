@@ -42,6 +42,13 @@ enum class Gait { Forward, Back, TurnLeft, TurnRight };
 // keepGoing (optional) is checked after each half-cycle like a key: returning false stops the same way.
 bool walk(Gait g, int cycles, bool (*keepGoing)() = nullptr);
 
+// With keepGoing (controller) a walk pauses mid-step when it returns false and stays in the walk pose;
+// the next walk() carries on from there. These manage that state:
+bool inWalkPose();  // paused / walking in the walk pose
+bool canWalk();     // stand pose or walk pose
+void endWalk();     // walk pose -> stand pose (each group lifts, places, lowers)
+void resetWalk();   // forget the walk pose (outputs were turned off)
+
 // Climb an obstacle ahead (flags::CLIMB from the ToF sensor, or 'climb'). Starts and ends in the stand
 // pose. Sequence itself is still TODO (see motion.cpp / cfg::CLIMB_*).
 bool climb();
