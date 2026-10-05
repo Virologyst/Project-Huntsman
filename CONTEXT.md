@@ -124,7 +124,8 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 - [x] ToF sensor (VL53L0X) on GPIO 17/18: reading OK (736 mm, 2026-10-05). Now only lifts the front legs
       higher when < 30 mm; no auto-climb
-- [ ] Climb sequence: `motion::climb()` is a stub, triggered by controller LT / `climb`  <- next
+- [x] Climb gait (user design): caterpillar wave front to back (FL+FR, FML+FMR, BML+BMR, BL, BR), front four
+      lift to the Y limit and push the front of the body up; hold LT (speed by pull) / `climb [n]`. Untested
 
 ## Open questions
 

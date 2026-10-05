@@ -18,12 +18,12 @@ the address into `cfg::PAD_ADDRESS`.
 
 | Input | Action |
 |---|---|
-| **A** | stand (same as `stand`); from a paused walk, back to the stand pose |
+| **A** | stand (same as `stand`); from a paused walk or climb, back to the stand pose |
 | **B** | sit (same as `sit`) |
 | Left stick / D-pad **up** | walk forward while held (release = pause in place) |
 | Left stick / D-pad **down** | walk back while held |
 | Left stick / D-pad **left / right** | turn left / right while held |
-| **Left trigger** (LT) | climb: releases the 100 mm obstacle stop so forward walking carries on; from the stand pose also runs the climb sequence (still a stub). Same as `climb` |
+| **Left trigger** (LT), hold | climb wave (front to back) while held - pull harder = faster; release pauses in place. Also releases the 100 mm obstacle stop. Console: `climb [n]` |
 
 - Walking starts from the stand pose (press **A** first) or carries on from a paused walk.
 - **Releasing the stick pauses in place:** every joint stops mid-step and holds. Changing direction or the

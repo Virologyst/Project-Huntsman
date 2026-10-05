@@ -138,10 +138,18 @@ constexpr int TOF_MAX_MM = 2000;              // beyond this = nothing in range 
 constexpr bool TOF_AUTO_CLIMB = false;        // off: climb is on the controller's left trigger. true = ToF flag runs climb
 constexpr int WALK_FRONT_OBSTACLE_LIFT_US = 600;  // extra front-leg lift while the ToF reads < TOF_NEAR_MM (was 200; tripled. FL/FR Y clamp at their limits)
 
-// ---------- Climb sequence (motion::climb, docs/motion.md) ----------
-// TODO: sequence not written yet - add its offsets / ramps here as it takes shape
-constexpr int CLIMB_LIFT_US = 300;            // Y up for a leg stepping onto the obstacle
-constexpr uint16_t CLIMB_RAMP_MS = 400;
+// ---------- Climb gait (motion::climb, docs/motion.md) ----------
+// Caterpillar wave, front to back, 5 phases per cycle: FL+FR, FML+FMR, BML+BMR, BL, BR. In each phase that
+// group lifts high, reaches to the front of its stroke and sets down while every other leg pushes the body
+// forward a quarter of its stroke. Front corners use the walk's reach / pull K-Y stroke, back corners the
+// tuck / push stroke, middles swing X (with the straight-line IK when WALK_MID_IK).
+constexpr int CLIMB_LIFT_US = 550;            // Y up for a stepping leg (BML BMR BL BR)
+constexpr int CLIMB_FRONT_LIFT_US = 1100;     // FL FR FML FMR: as high as they go - always clamps at each Y joint's limit
+constexpr int CLIMB_FRONT_PUSH_US = 300;      // FL FR FML FMR push down this much more on the ground: front of the body up
+                                              // (~40 deg on the femur; much further and the foot swings under the body)
+constexpr int CLIMB_STRIDE_MID_US = 100;      // middle legs X each way from base over a full stroke
+constexpr uint16_t CLIMB_SWING_MS = 400;      // stepping leg: lift + reach
+constexpr uint16_t CLIMB_LOWER_MS = 250;      // stepping leg: lower (front feet then touch down over WALK_FRONT_TOUCHDOWN_MS)
 
 // Absolute pulse limits for any output, regardless of joint calibration
 constexpr int HARD_MIN_US = 400;

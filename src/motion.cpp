@@ -470,6 +470,117 @@ void placeGroup(const char *const group[], bool walkPose, motion::Gait g = motio
     lower.run(cfg::WALK_LIFT_MS);
 }
 
+// ---- climb gait (caterpillar wave, front to back) ----
+// Legs in wave order; group = the phase in which the leg steps
+const char *const CLIMB_LEGS[8] = {"FL", "FR", "FML", "FMR", "BML", "BMR", "BL", "BR"};
+const int CLIMB_GROUP[8] = {0, 0, 1, 1, 2, 2, 3, 4};
+constexpr int CLIMB_PHASES = 5;
+bool inClimb = false;     // legs are in the climb wave (paused or climbing)
+int climbPhase = 0;       // group stepping next
+float climbP[8] = {};     // stroke position per leg: 1 = front of the stroke, 0 = back
+
+float lerpf(float a, float b, float t) { return a + (b - a) * t; }
+
+// Physical pulses for a climbing leg on the ground at stroke position p (0 = back, 1 = front)
+void climbPose(const char *leg, float p, int &xUs, int &yUs, int &kUs) {
+    const Joint &jx = servos::joints[servos::find(leg, 'X')];
+    const Joint &jy = servos::joints[servos::find(leg, 'Y')];
+    const Joint &jk = servos::joints[servos::find(leg, 'K')];
+    float x, y, k;  // offsets from neutral
+    if (isCorner(leg) && isFront(leg)) {  // reach (front of stroke) -> pull (back)
+        x = walkBaseX(leg);
+        k = lerpf(cfg::WALK_FRONT_PULL_KNEE_US, cfg::WALK_FRONT_REACH_KNEE_US, p);
+        y = lerpf(cfg::WALK_FRONT_PULL_Y_US, cfg::WALK_FRONT_REACH_Y_US, p);
+    } else if (isCorner(leg)) {           // tucked (front of stroke) -> pushed out (back)
+        x = walkBaseX(leg);
+        k = lerpf(cfg::WALK_REAR_PUSH_KNEE_US, cfg::WALK_REAR_TUCK_KNEE_US, p);
+        y = lerpf(cfg::WALK_REAR_PUSH_Y_US, cfg::WALK_REAR_TUCK_Y_US, p);
+    } else {                              // middles swing X; femur / knee from the straight-line IK
+        x = walkBaseX(leg) + cfg::CLIMB_STRIDE_MID_US * (2.0f * p - 1.0f);
+        y = cfg::STAND_PUSH_US;
+        k = walkKnee(leg);
+    }
+    xUs = jx.neutralUs + (int)lroundf(x * jx.dir);
+    yUs = jy.neutralUs + (int)lroundf(y * jy.dir);
+    kUs = jk.neutralUs + (int)lroundf(k * jk.dir);
+    if (!isCorner(leg) && cfg::WALK_MID_IK) onLine(leg, walkLine(leg, motion::Gait::Forward), xUs, yUs, kUs);
+    if (leg[0] == 'F') yUs -= cfg::CLIMB_FRONT_PUSH_US * jy.dir;  // front four push the body up
+}
+
+// The four front legs (FL FR FML FMR) lift as high as their Y joints allow; the rest CLIMB_LIFT_US
+int climbLift(const char *leg) { return leg[0] == 'F' ? cfg::CLIMB_FRONT_LIFT_US : cfg::CLIMB_LIFT_US; }
+
+// One wave phase: group j steps (lift, reach to the front of its stroke, set down) while every other leg
+// pushes back a quarter of its stroke. Returns false if keepGoing paused it (state not advanced: resume
+// replays the phase from wherever the legs are).
+bool climbPhaseRun(int j, bool (*keepGoing)()) {
+    using namespace motion;
+    bool frontSteps = (j == 0);
+    int32_t tSwing = scaled(cfg::CLIMB_SWING_MS), tLower = scaled(cfg::CLIMB_LOWER_MS);
+    int32_t tTouch = frontSteps ? scaled(cfg::WALK_FRONT_TOUCHDOWN_MS) : 0;
+    int32_t total = tSwing + tLower + tTouch;
+    float next[8];
+    Timeline tl;
+    for (int i = 0; i < 8; i++) {
+        const char *leg = CLIMB_LEGS[i];
+        int xj = servos::find(leg, 'X'), yj = servos::find(leg, 'Y'), kj = servos::find(leg, 'K');
+        int x, y, k;
+        if (CLIMB_GROUP[i] == j) {
+            next[i] = 1.0f;
+            climbPose(leg, 1.0f, x, y, k);
+            tl.addRaw(yj, 0, tSwing, y + climbLift(leg) * servos::joints[yj].dir, EASE_BOTH);
+            tl.addRaw(xj, 0, tSwing, x, EASE_BOTH);
+            tl.addRaw(kj, 0, tSwing, k, EASE_BOTH);
+            if (isCorner(leg) && isFront(leg)) {
+                tl.addRaw(yj, tSwing, tSwing + tLower, y + cfg::WALK_FRONT_APPROACH_US * servos::joints[yj].dir, EASE_IN);
+                tl.addRaw(yj, tSwing + tLower, total, y, EASE_SOFT);
+            } else {
+                tl.addRaw(yj, tSwing, total, y, EASE_BOTH);
+            }
+        } else {
+            next[i] = max(0.0f, climbP[i] - 1.0f / (CLIMB_PHASES - 1));
+            climbPose(leg, next[i], x, y, k);
+            tl.addRaw(xj, 0, total, x, EASE_NONE);
+            tl.addRaw(yj, 0, total, y, EASE_NONE);
+            tl.addRaw(kj, 0, total, k, EASE_NONE);
+        }
+    }
+    if (!tl.run(total, keepGoing)) return false;
+    for (int i = 0; i < 8; i++) climbP[i] = next[i];
+    climbPhase = (j + 1) % CLIMB_PHASES;
+    return true;
+}
+
+// From the stand pose into the wave: each leg at the stroke position it needs for phase 0
+// (FL FR at the back, ready to step; then 1/4, 1/2, 3/4 along; BR at the front). Two tetrapod groups:
+// lift, place, lower, so no foot drags.
+void enterClimb() {
+    for (int i = 0; i < 8; i++) {
+        int g = CLIMB_GROUP[i];
+        climbP[i] = g == 0 ? 0.0f : 1.0f - (float)(CLIMB_PHASES - 1 - g) / (CLIMB_PHASES - 1);
+    }
+    for (const char *const *group : {GROUP_A, GROUP_B}) {
+        Pose lift, place, lower;
+        for (int k = 0; k < 4; k++) {
+            const char *leg = group[k];
+            int i = 0;
+            while (strcmp(CLIMB_LEGS[i], leg)) i++;
+            int x, y, kk;
+            climbPose(leg, climbP[i], x, y, kk);
+            int yj = servos::find(leg, 'Y');
+            lift.addRaw(yj, y + climbLift(leg) * servos::joints[yj].dir);
+            place.addRaw(servos::find(leg, 'X'), x);
+            place.addRaw(servos::find(leg, 'K'), kk);
+            lower.addRaw(yj, y);
+        }
+        lift.run(cfg::WALK_LIFT_MS);
+        place.run(cfg::WALK_SWING_MS * 2);
+        lower.run(cfg::WALK_LIFT_MS);
+    }
+    climbPhase = 0;
+    inClimb = true;
+}
+
 bool keyPressed() {
     if (!Term.available()) return false;
     while (Term.available()) Term.read();
@@ -543,6 +654,7 @@ bool rampAllCenter(uint16_t ms) {
 
 bool standUp(bool stepMode) {
     inWalk = false;
+    inClimb = false;
     Term.println("Stand up (any key aborts and holds).");
     if (stepMode && !waitStep("all joints to centre")) return false;
     Term.println("all joints to centre ...");
@@ -565,7 +677,7 @@ bool isStanding() {
 
 bool inWalkPose() { return inWalk; }
 
-bool canWalk() { return inWalk || isStanding(); }
+bool canWalk() { return inWalk || inClimb || isStanding(); }
 
 void endWalk() {
     if (!inWalk) return;
@@ -575,9 +687,13 @@ void endWalk() {
     inWalk = false;
 }
 
-void resetWalk() { inWalk = false; }
+void resetWalk() {
+    inWalk = false;
+    inClimb = false;
+}
 
 bool walk(Gait g, int cycles, bool (*keepGoing)()) {
+    if (inClimb) endClimb();  // climb pose -> stand pose -> walk pose
     if (!canWalk()) {
         Term.println("Not in the stand pose - run 'stand' first.");
         return false;
@@ -641,37 +757,43 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
 
 bool blocked(Gait g) { return obstacleStop(g); }
 
-void climbPressed() {
-    climbCleared = true;  // unlock forward walking past the obstacle stop
-    if (isStanding()) {
-        climb();
-    } else {
-        Term.printf("Climb: forward walking unlocked past the obstacle (%d mm) - climb sequence not written yet.\n",
-                    tof::distanceMm());
-    }
+bool inClimbPose() { return inClimb; }
+
+void endClimb() {
+    if (!inClimb) return;
+    Term.println("Back to the stand pose.");
+    placeGroup(GROUP_A, false);
+    placeGroup(GROUP_B, false);
+    inClimb = false;
 }
 
-bool climb() {
-    if (!isStanding()) {
-        Term.println("Not in the stand pose - run 'stand' first.");
-        return false;
+bool climb(int cycles, bool (*keepGoing)()) {
+    climbCleared = true;  // also unlocks forward walking past the obstacle stop
+    if (inWalk) endWalk();
+    if (!inClimb) {
+        if (!isStanding()) {
+            Term.println("Not in the stand pose - run 'stand' first.");
+            return false;
+        }
+        Term.println("Climb: staggering the legs into the wave.");
+        enterClimb();
     }
-    Term.printf("Climb (obstacle %d mm) - any key aborts and holds.\n", tof::distanceMm());
-
-    // TODO: climbing sequence. Building blocks (all in this file):
-    //   Pose p; p.add("FL", 'Y', offset); ... p.run(ms);   - one coordinated ramp, offsets from neutral,
-    //                                                         + = lift up / knee up / swing forward
-    //   placeGroup(GROUP_A, true/false)                     - lift, place, lower a tetrapod group
-    //   rampType('Y', offset, ms)                           - one joint type on all 8 legs
-    //   cfg::CLIMB_LIFT_US, cfg::CLIMB_RAMP_MS              - tuning constants (config.h)
-    // Must finish in the stand pose (isStanding() true) so walking can resume; return false if aborted.
-
-    Term.println("Climb sequence not written yet - standing.");
+    Term.printf("Climbing (obstacle %d mm)%s\n", tof::distanceMm(),
+                keepGoing ? " - release LT to pause." : "");
+    for (int n = 0; cycles == 0 || n < cycles * CLIMB_PHASES; n++) {
+        if (!climbPhaseRun(climbPhase, keepGoing) || (keepGoing && !keepGoing())) {
+            Term.println("Climb paused - holding. Hold LT to carry on, A = stand pose, B = sit.");
+            return true;
+        }
+        if (!keepGoing && keyPressed()) break;
+    }
+    if (!keepGoing) endClimb();
     return true;
 }
 
 bool sitDown() {
     inWalk = false;
+    inClimb = false;
     Term.println("Sit down (any key aborts and holds).");
     return step(false, "Y to centre - lowering the body", 'Y', 0, cfg::STAND_PUSH_MS) &&
            step(false, "K to centre", 'K', 0, cfg::STAND_RAMP_MS) &&

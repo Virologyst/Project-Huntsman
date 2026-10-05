@@ -49,13 +49,14 @@ bool canWalk();     // stand pose or walk pose
 void endWalk();     // walk pose -> stand pose (each group lifts, places, lowers)
 void resetWalk();   // forget the walk pose (outputs were turned off)
 
-// Climb an obstacle ahead (flags::CLIMB from the ToF sensor, or 'climb'). Starts and ends in the stand
 // pose. Sequence itself is still TODO (see motion.cpp / cfg::CLIMB_*).
-bool climb();
-
-// Climb button (controller LT / 'climb'): unlocks forward walking past the obstacle stop (TOF_STOP_MM) and
-// runs climb() if standing. Walking forward from the walk pose then carries on.
-void climbPressed();
+// Climb gait: caterpillar wave front to back (cfg::CLIMB_*). Enters from the stand / walk pose, then runs
+// cycles (0 = until keepGoing is false or a key). With keepGoing (controller LT) it pauses in place and
+// stays in the climb pose; the console runs whole cycles and returns to the stand pose. Also unlocks forward
+// walking past the obstacle stop (TOF_STOP_MM).
+bool climb(int cycles, bool (*keepGoing)() = nullptr);
+bool inClimbPose();
+void endClimb();    // climb pose -> stand pose
 
 // Walking this way is held at an obstacle (forward only, inside TOF_STOP_MM, climb not pressed)
 bool blocked(Gait g);

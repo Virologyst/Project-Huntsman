@@ -72,7 +72,7 @@ void handleClimbFlag() {
     Term.printf("\n[tof] obstacle at %d mm", tof::distanceMm());
     if (motion::isStanding()) {
         Term.println(" - climb");
-        motion::climb();
+        motion::climb(1);
     } else {
         Term.println(" - not standing, ignored");
     }

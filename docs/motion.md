@@ -154,14 +154,36 @@ front feet **ease out** on touchdown (quadratic deceleration in the lower ramp, 
 stamping. (Now `EASE_SOFT` in the per-joint easing, see above.) Turns: corner X at base + stride can now reach the X limit (977 us)
 and clamp there.
 
-## Climb - `climb` (controller left trigger)
+## Climb - caterpillar wave (hold LT, or `climb [n]`)
 
-**Climb is triggered by the controller's left trigger** (LT past half travel) or the `climb` console
-command; it also releases the obstacle stop (below). The ToF sensor no longer starts a climb (`TOF_AUTO_CLIMB` = false).
+A separate gait (user design, 2026-10-05): a wave that runs **front to back**, 5 phases per cycle. In each
+phase one group lifts high, reaches to the front of its stroke and sets down, while **every other leg pushes
+the body forward** a quarter of its stroke:
 
-**The sequence itself is not written yet** - `motion::climb()` in `src/motion.cpp` is a stub that prints
-and returns; the building blocks (`Pose`, `placeGroup`, `rampType`) and `cfg::CLIMB_*` constants are
-listed in its TODO. It must start and end in the stand pose so walking can resume.
+| Phase | Steps | Others |
+|---|---|---|
+| 1 | FL + FR reach out and grab | push |
+| 2 | FML + FMR reach | push |
+| 3 | BML + BMR | push |
+| 4 | BL alone | push |
+| 5 | BR alone | push |
+
+- Each leg spends 1 phase stepping and 4 pushing, so at most two feet are ever off the ground.
+- Strokes reuse the walk's: front corners reach / pull (K-Y), back corners tuck / push (K-Y), middles swing
+  X (+/- `CLIMB_STRIDE_MID_US` = 100) with the straight-line IK.
+- **The four front legs lift as high as their Y joints allow** (`CLIMB_FRONT_LIFT_US` = 1100, always clamps
+  at the joint limit) and, on the ground, **push the front of the body up** (`CLIMB_FRONT_PUSH_US` = 300
+  more femur-down, ~40 deg, ~50-60 mm higher - much further and the foot just swings under the body). Back
+  legs lift `CLIMB_LIFT_US` = 550. Front feet use the walk's approach + soft touchdown.
+- Entering from the stand pose it staggers the legs first (two tetrapod groups, lift / place / lower): FL FR
+  at the back of the stroke, ready to step, the rest 1/4, 1/2, 3/4 along, BR at the front.
+- **Controller:** hold **LT** to climb, how far it is pulled sets the speed (`WALK_MIN_SPEED`..1); release
+  pauses in place in the climb pose; **A** returns to the stand pose; stick walking from the climb pose goes
+  through the stand pose first. **Console:** `climb [n]` runs n cycles (default 1), then the stand pose.
+- Climbing also unlocks forward walking past the ToF obstacle stop.
+- Timing per phase: `CLIMB_SWING_MS` 400 + `CLIMB_LOWER_MS` 250 (+ 300 touchdown when the front legs step).
+- **Untested.** The top of the Y range is still the unverified prototype limit - if a front femur hits the
+  body at full lift, set a proper limit with `setmax` / `setmin`.
 
 ## ToF sensor: obstacle approach
 

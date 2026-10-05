@@ -14,6 +14,7 @@ XboxSeriesXControllerESP32_asukiaaa::Core xbox(cfg::PAD_ADDRESS);
 
 bool wasConnected = false;
 bool prevA = false, prevB = false, prevLT = false;
+bool ltWarned = false;  // 'needs the stand pose' already printed for this LT hold
 
 enum class Dir { None, Forward, Back, Left, Right };
 
@@ -47,8 +48,13 @@ motion::Gait gaitFor(Dir d) {
     }
 }
 
-// Left trigger past half travel
-bool ltPressed() { return xbox.xboxNotif.trigLT > XboxControllerNotificationParser::maxTrig / 2; }
+// Left trigger past a quarter travel; climb speed from how far it is pulled (WALK_MIN_SPEED .. 1)
+bool ltPressed() { return xbox.xboxNotif.trigLT > XboxControllerNotificationParser::maxTrig / 4; }
+float ltSpeed() {
+    float f = (xbox.xboxNotif.trigLT - XboxControllerNotificationParser::maxTrig / 4.0f) /
+              (XboxControllerNotificationParser::maxTrig * 0.75f);
+    return cfg::WALK_MIN_SPEED + (1.0f - cfg::WALK_MIN_SPEED) * constrain(f, 0.0f, 1.0f);
+}
 
 // Walk speed from how far the stick is pushed: WALK_MIN_SPEED just past the dead zone, 1 at full.
 // The D-pad always walks at full speed.
@@ -61,6 +67,14 @@ float stickSpeed() {
 }
 
 bool ready() { return xbox.isConnected() && !xbox.isWaitingForFirstNotification(); }
+
+// Climbing continues while LT is held
+bool keepClimbing() {
+    xbox.onLoop();
+    if (!ready() || !ltPressed()) return false;
+    motion::setSpeed(ltSpeed());
+    return true;
+}
 
 // Walking continues while the same direction is held and the controller stays connected
 Dir walking = Dir::None;
@@ -104,13 +118,16 @@ void handle() {
 
     const auto &n = xbox.xboxNotif;
     bool pressA = n.btnA && !prevA, pressB = n.btnB && !prevB;
-    bool lt = ltPressed(), pressLT = lt && !prevLT;
+    bool lt = ltPressed();
     prevA = n.btnA;
     prevB = n.btnB;
     prevLT = lt;
 
     if (pressA) {
-        if (motion::inWalkPose()) {
+        if (motion::inClimbPose()) {
+            Term.println("\n[pad] A: stand pose");
+            motion::endClimb();
+        } else if (motion::inWalkPose()) {
             Term.println("\n[pad] A: stand pose");
             motion::endWalk();
         } else {
@@ -122,9 +139,17 @@ void handle() {
         Term.println("\n[pad] B: sit");
         motion::sitDown();
         Term.print("> ");
-    } else if (pressLT) {
-        Term.println("\n[pad] LT: climb");
-        motion::climbPressed();
+    } else if (lt && !motion::canWalk()) {
+        if (!ltWarned) Term.print("\n[pad] LT: climb needs the stand pose (A)\n> ");
+        ltWarned = true;
+    } else if (lt) {
+        ltWarned = false;
+        Term.println("\n[pad] LT: climb (release to pause; pull harder = faster)");
+        motion::setSpeed(ltSpeed());
+        motion::climb(0, keepClimbing);
+        motion::setSpeed(1.0f);
+        prevA = n.btnA;
+        prevB = n.btnB;
         prevLT = ltPressed();
         Term.print("> ");
     } else {
