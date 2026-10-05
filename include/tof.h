@@ -9,7 +9,7 @@ bool begin();      // after pwm::begin() (shares its I2C bus); true if the senso
 void handle();     // call often: takes a new sample if one is ready, raises flags::CLIMB on an obstacle
 bool found();
 int distanceMm();  // last reading, -1 = nothing in range / no reading yet
-bool obstacle();   // currently inside the climb band (with hysteresis, cfg::TOF_CLIMB_MM / TOF_CLEAR_MM)
+bool obstacle();   // currently inside the climb band (with hysteresis, cfg::TOF_NEAR_MM / TOF_NEAR_CLEAR_MM)
 void printStatus();
 
 }  // namespace tof

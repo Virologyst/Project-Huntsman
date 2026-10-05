@@ -62,10 +62,11 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - **Xbox controller over BLE, not Classic BT** - the ESP32-S3 has BLE only; Xbox Series / updated One
   controllers speak BLE. Library: asukiaaa XboxSeriesXControllerESP32 (NimBLE, standard Arduino core),
   chosen over Bluepad32 which needs its own core. Needs the `min_spiffs` partition (app grew past 1.25 MB).
-- **Obstacle -> `CLIMB` flag, not a direct call** - `tof.cpp` only raises a bit in `flags.h` (edge-triggered,
-  300 mm on / 400 mm off hysteresis); `motion::walk` stops on it and `loop()` consumes it and runs
-  `motion::climb()` only from the stand pose. Keeps sensors decoupled from motion and makes the trigger
-  visible on the console (`tof`). Pololu VL53L0X library, non-blocking (checks the data-ready bit).
+- **Climb is manual (controller LT / `climb`), not ToF-triggered** (user, 2026-10-05). The ToF only raises the
+  front legs' lift while something is < 30 mm ahead. The `CLIMB` flag path is kept behind
+  `TOF_AUTO_CLIMB` = false. VL53L0X on its own I2C bus (Wire1, GPIO 17/18), Pololu library, non-blocking.
+- **Every ramp eases in/out** (trapezoid, 20%) where a joint starts/stops; stance strokes don't slow at the
+  ramp joins. **Walk speed scales with the controller stick** (0.4 to 1).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
 
 ## Current status
@@ -112,8 +113,9 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - [ ] Xbox controller over BLE (branch `feature/xbox-controller`, docs/controller.md): A stand, B sit,
       left stick / D-pad walk and turn while held. Written, not yet built or tested on the robot
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
-- [ ] ToF sensor (VL53L0X): module + `CLIMB` flag + walk stop + `tof` / `climb` commands written; not yet
-      wired, built or tested. `motion::climb()` is a stub - sequence to be written (user), see docs/motion.md
+- [x] ToF sensor (VL53L0X) on GPIO 17/18: reading OK (736 mm, 2026-10-05). Now only lifts the front legs
+      higher when < 30 mm; no auto-climb
+- [ ] Climb sequence: `motion::climb()` is a stub, triggered by controller LT / `climb`  <- next
 
 ## Open questions
 

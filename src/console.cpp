@@ -668,7 +668,7 @@ void printHelp() {
         "  sit                    lower the body, everything back to centre\n"
         "  walk [n] | back [n] | turn left|right [n]   tetrapod gait from the stand pose;\n"
         "                         n cycles or until a key (finishes the step, ends standing)\n"
-        "  climb                  climb the obstacle ahead (auto when the ToF reads < TOF_CLIMB_MM while standing)\n"
+        "  climb                  climb the obstacle ahead (auto when the ToF reads < TOF_NEAR_MM while standing)\n"
         "  tof                    range sensor readout and CLIMB flag state\n"
         "Xbox controller (docs/controller.md): A stand, B sit, left stick / D-pad walk + turn\n"
         "  pad                    controller status, stick and button readout\n"

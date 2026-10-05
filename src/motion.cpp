@@ -56,20 +56,17 @@ bool isLeft(const char *leg) { return leg[strlen(leg) - 1] == 'L'; }
 struct Pose {
     int joints[servos::COUNT];
     int targets[servos::COUNT];
-    bool ease[servos::COUNT];
+    uint8_t ease[servos::COUNT];
     int n = 0;
 
-    void add(const char *leg, char type, int offsetUs, bool easeOut = false) {
+    void add(const char *leg, char type, int offsetUs, uint8_t easing = motion::EASE_BOTH) {
         int i = servos::find(leg, type);
-        joints[n] = i;
-        targets[n] = servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir;
-        ease[n] = easeOut;
-        n++;
+        addRaw(i, servos::joints[i].neutralUs + offsetUs * servos::joints[i].dir, easing);
     }
-    void addRaw(int joint, int target, bool easeOut = false) {
+    void addRaw(int joint, int target, uint8_t easing = motion::EASE_BOTH) {
         joints[n] = joint;
         targets[n] = target;
-        ease[n] = easeOut;
+        ease[n] = easing;
         n++;
     }
     int find(int joint) const {
@@ -120,7 +117,11 @@ int strideEnd(const char *leg, int s, motion::Gait g) {
 bool isFront(const char *leg) { return leg[0] == 'F'; }
 
 // Y lift above the stand pose while a leg is in the air: the front corner legs lift higher
-int walkLift(const char *leg) { return isCorner(leg) && isFront(leg) ? cfg::WALK_FRONT_LIFT_US : cfg::WALK_LIFT_US; }
+// ... and higher still while the ToF sees something close in front (cfg::TOF_NEAR_MM)
+int walkLift(const char *leg) {
+    if (!(isCorner(leg) && isFront(leg))) return cfg::WALK_LIFT_US;
+    return cfg::WALK_FRONT_LIFT_US + (tof::obstacle() ? cfg::WALK_FRONT_OBSTACLE_LIFT_US : 0);
+}
 
 // Corner legs walking forward / back hold X and stride with K and Y instead: the front pair reaches out
 // and pulls in, the back pair sets down tucked and pushes out. Turns still swing them on X.
@@ -128,75 +129,85 @@ bool kneeStroke(const char *leg, motion::Gait g) {
     return isCorner(leg) && (g == motion::Gait::Forward || g == motion::Gait::Back);
 }
 
-// Add a corner leg's K (and its ground Y) at the extended or tucked end of its stroke
-// (touchdown = the Y move is the swing leg lowering: front feet ease in so they don't stamp)
-void addKneeStroke(Pose &knee, Pose &ground, const char *leg, bool extended, bool touchdown = false) {
-    if (isFront(leg)) {
-        knee.add(leg, 'K', extended ? cfg::WALK_FRONT_REACH_KNEE_US : cfg::WALK_FRONT_PULL_KNEE_US);
-        ground.add(leg, 'Y', extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US, touchdown);
-    } else {
-        knee.add(leg, 'K', extended ? cfg::WALK_REAR_PUSH_KNEE_US : cfg::WALK_REAR_TUCK_KNEE_US);
-        ground.add(leg, 'Y', extended ? cfg::WALK_REAR_PUSH_Y_US : cfg::WALK_REAR_TUCK_Y_US);
-    }
+// Corner-leg K / ground-Y offsets at the extended or tucked end of its stroke
+int strokeK(const char *leg, bool extended) {
+    if (isFront(leg)) return extended ? cfg::WALK_FRONT_REACH_KNEE_US : cfg::WALK_FRONT_PULL_KNEE_US;
+    return extended ? cfg::WALK_REAR_PUSH_KNEE_US : cfg::WALK_REAR_TUCK_KNEE_US;
+}
+int strokeY(const char *leg, bool extended) {
+    if (isFront(leg)) return extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US;
+    return extended ? cfg::WALK_REAR_PUSH_Y_US : cfg::WALK_REAR_TUCK_Y_US;
 }
 
-// Half a gait cycle in up to three ramps. The stance legs push through all of them, so the body keeps
-// moving instead of pausing while the swing legs lift and land:
-//   air   - swing legs lift (Y eased out, so the feet clear early) and swing X / K to the next stroke start
+float speed = 1.0f;  // motion::setSpeed
+int32_t scaled(uint16_t ms) { return max<int32_t>(cfg::FRAME_MS, (int32_t)(ms / speed)); }
+
+int startPos(int joint, int fallback) { return servos::position(joint) ? servos::position(joint) : fallback; }
+
+// Half a gait cycle in up to three ramps. The stance legs push through all of them (speeding up at the
+// start of their stroke and slowing at the end, but not at the joins), so the body keeps moving:
+//   air   - swing legs lift and swing X to the next stroke start
 //   down  - swing legs lower; front feet stop WALK_FRONT_APPROACH_US above the ground
 //   touch - front feet set down slowly (servos can't follow a fast drop), and the planted front foot eases
 //           up a little (handover) so the body settles onto the new foot
+// The big corner-leg knee strokes (750-1100 us) are spread over air + down: too far for the air ramp alone.
 void halfCycle(const char *const swing[], const char *const stance[], motion::Gait g) {
-    Pose air, down, touch, stanceEnd, handover;
-    bool forward = g == motion::Gait::Forward;
+    using namespace motion;
+    Pose air, down, touch, swingK, stanceEnd, handover;
+    bool forward = g == Gait::Forward;
     for (int k = 0; k < 4; k++) {
         // Swing leg (walking forward a front leg sets down extended and a back leg tucked; back, the reverse)
-        air.add(swing[k], 'Y', cfg::STAND_PUSH_US + walkLift(swing[k]), true);
+        air.add(swing[k], 'Y', cfg::STAND_PUSH_US + walkLift(swing[k]), EASE_BOTH);
         bool frontCorner = isCorner(swing[k]) && isFront(swing[k]);
+        int groundY = cfg::STAND_PUSH_US;
         if (kneeStroke(swing[k], g)) {
             bool extended = isFront(swing[k]) == forward;
-            addKneeStroke(air, frontCorner ? touch : down, swing[k], extended, true);
-            if (frontCorner)
-                down.add(swing[k], 'Y',
-                         (extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US) + cfg::WALK_FRONT_APPROACH_US);
+            swingK.add(swing[k], 'K', strokeK(swing[k], extended));
+            groundY = strokeY(swing[k], extended);
         } else {
-            air.add(swing[k], 'X', strideEnd(swing[k], strideSign(swing[k], g), g));
-            if (frontCorner) {
-                down.add(swing[k], 'Y', cfg::STAND_PUSH_US + cfg::WALK_FRONT_APPROACH_US);
-                touch.add(swing[k], 'Y', cfg::STAND_PUSH_US, true);
-            } else {
-                down.add(swing[k], 'Y', cfg::STAND_PUSH_US);
-            }
+            air.add(swing[k], 'X', strideEnd(swing[k], strideSign(swing[k], g), g), EASE_BOTH);
+        }
+        if (frontCorner) {
+            down.add(swing[k], 'Y', groundY + cfg::WALK_FRONT_APPROACH_US, EASE_IN);
+            touch.add(swing[k], 'Y', groundY, EASE_SOFT);
+        } else {
+            down.add(swing[k], 'Y', groundY, EASE_BOTH);
         }
         // Stance leg: on the ground to the end of its stroke
         if (kneeStroke(stance[k], g)) {
             bool extended = isFront(stance[k]) != forward;
-            addKneeStroke(stanceEnd, stanceEnd, stance[k], extended);
-            if (isFront(stance[k])) {
-                int endY = extended ? cfg::WALK_FRONT_REACH_Y_US : cfg::WALK_FRONT_PULL_Y_US;
-                handover.add(stance[k], 'Y', endY + cfg::WALK_FRONT_HANDOVER_US, true);
-            }
+            stanceEnd.add(stance[k], 'K', strokeK(stance[k], extended));
+            stanceEnd.add(stance[k], 'Y', strokeY(stance[k], extended));
+            if (isFront(stance[k]))
+                handover.add(stance[k], 'Y', strokeY(stance[k], extended) + cfg::WALK_FRONT_HANDOVER_US);
         } else {
             stanceEnd.add(stance[k], 'X', strideEnd(stance[k], -strideSign(stance[k], g), g));
         }
     }
 
-    // Spread the stance stroke over the ramps in proportion to their time
-    bool hasTouch = touch.n || handover.n;
     // signed: an unsigned time here turns a negative (end - start) into a huge value -> wild joint moves
-    int32_t tAir = cfg::WALK_SWING_MS, tDown = cfg::WALK_LIFT_MS, tTouch = hasTouch ? cfg::WALK_FRONT_TOUCHDOWN_MS : 0;
+    bool hasTouch = touch.n || handover.n;
+    int32_t tAir = scaled(cfg::WALK_SWING_MS), tDown = scaled(cfg::WALK_LIFT_MS);
+    int32_t tTouch = hasTouch ? scaled(cfg::WALK_FRONT_TOUCHDOWN_MS) : 0;
     int32_t total = tAir + tDown + tTouch;
+
+    // Swing knees: speed up in air, slow down at the end of down
+    for (int k = 0; k < swingK.n; k++) {
+        int j = swingK.joints[k], end = swingK.targets[k], start = startPos(j, end);
+        air.addRaw(j, start + (end - start) * tAir / (tAir + tDown), EASE_IN);
+        down.addRaw(j, end, EASE_OUT);
+    }
+    // Stance: spread in proportion to the ramp times; ease only at the stroke's start and end
     for (int k = 0; k < stanceEnd.n; k++) {
-        int j = stanceEnd.joints[k], end = stanceEnd.targets[k];
-        int start = servos::position(j) ? servos::position(j) : end;
-        air.addRaw(j, start + (int32_t)(end - start) * tAir / total);
+        int j = stanceEnd.joints[k], end = stanceEnd.targets[k], start = startPos(j, end);
+        air.addRaw(j, start + (end - start) * tAir / total, EASE_IN);
         if (hasTouch) {
-            down.addRaw(j, start + (int32_t)(end - start) * (tAir + tDown) / total);
+            down.addRaw(j, start + (end - start) * (tAir + tDown) / total, EASE_NONE);
             int h = handover.find(j);
-            if (h >= 0) touch.addRaw(j, handover.targets[h], true);
-            else touch.addRaw(j, end);
+            if (h >= 0) touch.addRaw(j, handover.targets[h], EASE_SOFT);
+            else touch.addRaw(j, end, EASE_OUT);
         } else {
-            down.addRaw(j, end);
+            down.addRaw(j, end, EASE_OUT);
         }
     }
     air.run(tAir);
@@ -226,15 +237,28 @@ bool keyPressed() {
 
 // Between steps: a key, an obstacle (ToF raises flags::CLIMB - loop() then climbs) or the caller's check
 bool stopRequested(bool (*keepGoing)()) {
-    tof::handle();  // ramps block loop(), so sample here
-    return keyPressed() || flags::test(flags::CLIMB) || (keepGoing && !keepGoing());
+    tof::handle();  // ramps block loop(), so sample here (it also drives the front legs' obstacle lift)
+    return keyPressed() || (cfg::TOF_AUTO_CLIMB && flags::test(flags::CLIMB)) || (keepGoing && !keepGoing());
 }
 
 }  // namespace
 
 namespace motion {
 
-bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable, const bool easeOut[]) {
+// Fraction (0-1) of the move done at time t (0-1). Trapezoid speed: ramps up over EASE_FRACTION at the
+// start (EASE_IN) and down over it at the end (EASE_OUT); EASE_SOFT = quadratic slow-down to a stop.
+float progress(float t, uint8_t ease) {
+    if (ease & EASE_SOFT) return 1.0f - (1.0f - t) * (1.0f - t);
+    float a = (ease & EASE_IN) ? cfg::EASE_FRACTION : 0.0f;
+    float d = (ease & EASE_OUT) ? cfg::EASE_FRACTION : 0.0f;
+    float v = 1.0f / (1.0f - a / 2 - d / 2);  // peak speed so the total is still 1
+    if (t < a) return v * t * t / (2 * a);
+    if (t <= 1.0f - d) return v * (t - a / 2);
+    float u = t - (1.0f - d);
+    return v * ((1.0f - d) - a / 2) + v * (u - u * u / (2 * d));
+}
+
+bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable, const uint8_t ease[]) {
     int start[servos::COUNT];
     for (int k = 0; k < count; k++) {
         int now = servos::position(joints[k]);
@@ -243,16 +267,18 @@ bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool 
     int steps = max(1, ms / cfg::FRAME_MS);
     for (int s = 1; s <= steps; s++) {
         uint32_t t = millis();
+        float time = (float)s / steps;
         for (int k = 0; k < count; k++) {
-            int done = s * 1000 / steps;                                       // linear progress, 0-1000
-            if (easeOut && easeOut[k]) done = 1000 - (1000 - done) * (1000 - done) / 1000;  // quadratic ease-out
-            servos::moveRaw(joints[k], start[k] + (targets[k] - start[k]) * done / 1000);
+            float done = progress(time, ease ? ease[k] : EASE_BOTH);
+            servos::moveRaw(joints[k], start[k] + (int)lroundf((targets[k] - start[k]) * done));
         }
         if (abortable && aborted()) return false;
         while (millis() - t < cfg::FRAME_MS) {}
     }
     return true;
 }
+
+void setSpeed(float s) { speed = constrain(s, 0.1f, 2.0f); }
 
 bool rampType(char type, int offsetUs, uint16_t ms) {
     int joints[servos::LEG_COUNT], targets[servos::LEG_COUNT], n = 0;

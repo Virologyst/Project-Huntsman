@@ -5,11 +5,20 @@
 
 namespace motion {
 
+// Easing per joint in a ramp (bit flags). EASE_IN / EASE_OUT: short speed-up / slow-down over
+// cfg::EASE_FRACTION of the ramp where the joint starts or stops; EASE_SOFT: full quadratic slow-down to a
+// stop (gentle touchdown). Joints that keep moving the same way into the next ramp use EASE_NONE at the join.
+enum : uint8_t { EASE_NONE = 0, EASE_IN = 1, EASE_OUT = 2, EASE_BOTH = 3, EASE_SOFT = 4 };
+
 // Ramp the listed joints from their current pulse to targets over ms, all together.
 // If abortable, any serial input aborts and holds position. Returns false if aborted.
-// easeOut (optional, per joint): that joint decelerates to a stop instead of arriving at full speed.
+// ease (optional, per joint, EASE_*); omitted = EASE_BOTH for every joint.
 bool ramp(const int joints[], const int targets[], int count, uint16_t ms, bool abortable = true,
-          const bool easeOut[] = nullptr);
+          const uint8_t ease[] = nullptr);
+
+// Walk speed: every walk timing is divided by this (1 = cfg timings; the controller stick sets it from
+// cfg::WALK_MIN_SPEED at the dead zone to 1 at full push)
+void setSpeed(float s);
 
 // Ramp one joint type ('K', 'Y', 'X') on all 8 legs to neutral + offset * dir
 bool rampType(char type, int offsetUs, uint16_t ms);

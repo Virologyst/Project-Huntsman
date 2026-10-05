@@ -4,7 +4,7 @@
 // Current firmware: calibration console. On boot every output goes to cfg::BOOT_PULSE_US, then the
 // robot stands up if cfg::BOOT_STAND (any key cancels). Console on USB and Wi-Fi (net.h);
 // Xbox controller over BLE drives stand / sit / walk (pad.h). A forward ToF sensor (tof.h) raises
-// flags::CLIMB below cfg::TOF_CLIMB_MM, which stops any walk and runs motion::climb().
+// flags::CLIMB below cfg::TOF_NEAR_MM, which stops any walk and runs motion::climb().
 // See docs/calibration.md, docs/motion.md and docs/wifi.md.
 
 #include <Arduino.h>

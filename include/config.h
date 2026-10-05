@@ -84,7 +84,9 @@ constexpr int WALK_STRIDE_CORNER_US = 150;  // corner legs X each way from base 
 // ESP32 browned out.
 constexpr int WALK_TURN_REAR_SHIFT_US = 150;
 constexpr uint16_t WALK_LIFT_MS = 200;   // 'down' ramp: swing legs lower (also lift/lower in and out of the walk pose)
-constexpr uint16_t WALK_SWING_MS = 400;  // 'air' ramp: swing legs lift + swing together; stance legs push through every ramp
+constexpr uint16_t WALK_SWING_MS = 200;  // 'air' ramp: swing legs lift + swing X (was 400: X 2x faster); stance pushes through every ramp
+constexpr float WALK_MIN_SPEED = 0.4f;   // controller: stick just past the dead zone walks at this speed (full push = 1)
+constexpr float EASE_FRACTION = 0.2f;    // every move speeds up / slows down over this much of its ramp where it starts / stops
 
 // Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
 constexpr bool BOOT_STAND = true;
@@ -104,10 +106,11 @@ constexpr uint8_t TOF_SDA_PIN = 17;           // own I2C bus (Wire1), separate f
 constexpr uint8_t TOF_SCL_PIN = 18;
 constexpr uint16_t TOF_PERIOD_MS = 50;        // continuous ranging interval
 constexpr uint32_t TOF_BUDGET_US = 33000;     // per-sample timing budget (longer = more accurate, max ~PERIOD)
-constexpr int TOF_CLIMB_MM = 300;             // closer than this raises flags::CLIMB ...
-constexpr int TOF_CLEAR_MM = 400;             // ... and it can't raise again until the range passes this
+constexpr int TOF_NEAR_MM = 30;              // closer than this: front legs lift higher (and flags::CLIMB if auto-climb) ...
+constexpr int TOF_NEAR_CLEAR_MM = 50;        // ... until the range passes this again
 constexpr int TOF_MAX_MM = 2000;              // beyond this = nothing in range (VL53L0X is ~1.2 m indoors)
-constexpr bool TOF_AUTO_CLIMB = true;         // loop() runs motion::climb() on the flag (only while standing)
+constexpr bool TOF_AUTO_CLIMB = false;        // off: climb is on the controller's left trigger. true = ToF flag runs climb
+constexpr int WALK_FRONT_OBSTACLE_LIFT_US = 200;  // extra front-leg lift while the ToF reads < TOF_NEAR_MM
 
 // ---------- Climb sequence (motion::climb, docs/motion.md) ----------
 // TODO: sequence not written yet - add its offsets / ramps here as it takes shape

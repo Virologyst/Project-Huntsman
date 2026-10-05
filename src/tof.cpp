@@ -12,7 +12,7 @@ namespace {
 VL53L0X sensor;
 bool present = false;
 int lastMm = -1;    // -1 = out of range / no reading
-bool inBand = false;  // hysteresis: true from < TOF_CLIMB_MM until > TOF_CLEAR_MM
+bool inBand = false;  // hysteresis: true from < TOF_NEAR_MM until > TOF_NEAR_CLEAR_MM
 uint32_t lastSampleMs = 0;
 
 // True once the sensor has a fresh sample waiting (continuous mode sets this bit each period)
@@ -40,7 +40,7 @@ bool begin() {
     sensor.setMeasurementTimingBudget(cfg::TOF_BUDGET_US);
     sensor.startContinuous(cfg::TOF_PERIOD_MS);
     Term.printf("ToF: VL53L0X OK, every %u ms; climb flag below %d mm (clears above %d)\n",
-                cfg::TOF_PERIOD_MS, cfg::TOF_CLIMB_MM, cfg::TOF_CLEAR_MM);
+                cfg::TOF_PERIOD_MS, cfg::TOF_NEAR_MM, cfg::TOF_NEAR_CLEAR_MM);
     return true;
 }
 
@@ -56,11 +56,11 @@ void handle() {
     lastMm = (sensor.timeoutOccurred() || mm > cfg::TOF_MAX_MM) ? -1 : (int)mm;
 
     bool wasNear = inBand;
-    if (lastMm >= 0 && lastMm < cfg::TOF_CLIMB_MM) inBand = true;
-    else if (lastMm < 0 || lastMm > cfg::TOF_CLEAR_MM) inBand = false;
+    if (lastMm >= 0 && lastMm < cfg::TOF_NEAR_MM) inBand = true;
+    else if (lastMm < 0 || lastMm > cfg::TOF_NEAR_CLEAR_MM) inBand = false;
 
     // Edge-triggered: raise once when something comes into the band; drop it if it goes away unhandled
-    if (inBand && !wasNear) flags::set(flags::CLIMB);
+    if (cfg::TOF_AUTO_CLIMB && inBand && !wasNear) flags::set(flags::CLIMB);
     if (!inBand && wasNear) flags::clear(flags::CLIMB);
 }
 

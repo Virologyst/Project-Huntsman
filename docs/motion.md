@@ -44,13 +44,21 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   - Back-middle legs (BML BMR): X base `WALK_BACK_MID_SPREAD_US` = 60 toward the tail, to stay clear of
     the front-middle legs (FMR/BMR touched at stride 150).
   - The body sits lower in the walk pose (expected).
-- Half-cycle, **no pause between strides** (2026-10-05): up to three ramps, and the stance group pushes
-  through all of them in proportion to their time, so the body keeps moving:
-  - **air** (`WALK_SWING_MS` 400): swing legs lift (Y +`WALK_LIFT_US`, eased out so the feet clear early)
-    and swing to the start of their next stroke at the same time;
+- Half-cycle, **no pause between strides**: up to three ramps, and the stance group pushes through all of
+  them in proportion to their time, so the body keeps moving:
+  - **air** (`WALK_SWING_MS` 200, was 400 - X 2x faster): swing legs lift (Y +`WALK_LIFT_US`) and swing X
+    to the start of their next stroke at the same time;
   - **down** (`WALK_LIFT_MS` 200): swing legs lower (front feet to `WALK_FRONT_APPROACH_US` above the ground);
   - **touch** (`WALK_FRONT_TOUCHDOWN_MS` 300): front feet set down slowly; handover.
-  About 900 ms per half-cycle (was ~1100 with ~700 ms of it the body standing still).
+  The corner-leg knee strokes (750-1100 us) run over air + down - too far for a 55 kg servo in 200 ms.
+  About 700 ms per half-cycle at full speed.
+- **Easing on every move** (`EASE_FRACTION` = 0.2): a joint speeds up over the first 20% of a ramp where it
+  starts and slows over the last 20% where it stops or changes direction. A joint that carries on the same
+  way into the next ramp (stance legs pushing through air -> down -> touch) is not slowed at the join.
+  Front touchdowns use a full soft slow-down (`EASE_SOFT`). Applies to stand / sit / walk-pose moves too.
+- **Speed** (`motion::setSpeed`): every walk timing is divided by it. Console walks run at 1; the
+  controller sets it from how far the stick is pushed - `WALK_MIN_SPEED` = 0.4 just past the dead zone up
+  to 1 at full push, updated every half step. D-pad = full speed.
 - **Front legs pull (`walk` / `back`).** FL and FR hold X at their base and do not stride on it. Swing:
   lift, knee out to `WALK_FRONT_REACH_KNEE_US`, lower to `WALK_FRONT_REACH_Y_US` - the foot is set down
   straight ahead. Stance: knee closes to `WALK_FRONT_PULL_KNEE_US` while Y moves to `WALK_FRONT_PULL_Y_US`,
@@ -112,36 +120,36 @@ stroke 50% longer on the inward end (reach unchanged), FML reaches 15% further f
 much higher to step over obstacles. Back pair then eased to 320: at 400 BL/BR scraped the battery.
 Then: front K stroke 750 -> 1100 us (reach +150, pull end +200), FML extra reach doubled to 46, and the
 front feet **ease out** on touchdown (quadratic deceleration in the lower ramp, same 200 ms) - they were
-stamping. `ramp()` takes an optional per-joint ease-out flag; `Pose::add(..., true)` sets it. Turns: corner X at base + stride can now reach the X limit (977 us)
+stamping. (Now `EASE_SOFT` in the per-joint easing, see above.) Turns: corner X at base + stride can now reach the X limit (977 us)
 and clamp there.
 
-## Climb - `climb` (and the ToF sensor)
+## Climb - `climb` (controller left trigger)
 
-A forward-facing VL53L0X (docs/hardware.md) is sampled every 50 ms from `loop()` and between walk steps.
-When the range drops below **`TOF_CLIMB_MM` = 300** it raises the **`CLIMB`** flag (`include/flags.h`, a
-bit set; `tof` shows it). The flag is edge-triggered with hysteresis: it is raised once when something
-enters the band and can't raise again until the range has gone past `TOF_CLEAR_MM` = 400; it drops if the
-object goes away before anyone acted on it.
-
-What happens on the flag (`TOF_AUTO_CLIMB` = true):
-
-- A walk in progress stops the same way a key does - current step finishes, back to the stand pose.
-- `loop()` then clears the flag and, if the robot is in the **stand pose**, runs `motion::climb()`.
-  Sitting or mid-move it just prints `[tof] obstacle ... ignored` - stand first.
-- `climb` on the console runs the same sequence by hand.
+**Climb is triggered by the controller's left trigger** (LT past half travel, from the stand pose) or the
+`climb` console command. The ToF sensor no longer starts a climb (`TOF_AUTO_CLIMB` = false).
 
 **The sequence itself is not written yet** - `motion::climb()` in `src/motion.cpp` is a stub that prints
 and returns; the building blocks (`Pose`, `placeGroup`, `rampType`) and `cfg::CLIMB_*` constants are
 listed in its TODO. It must start and end in the stand pose so walking can resume.
 
+## ToF sensor: higher front step
+
+A forward-facing VL53L0X (docs/hardware.md; own I2C bus on GPIO 17/18) is sampled every 50 ms from
+`loop()` and between walk steps. While it reads closer than **`TOF_NEAR_MM` = 30** (until it passes
+`TOF_NEAR_CLEAR_MM` = 50 again), the front legs lift an extra **`WALK_FRONT_OBSTACLE_LIFT_US` = 200** on
+every step, so they step up onto / over what is in front. 30 mm is at the VL53L0X's minimum range - raise
+it if the sensor sits back from the front feet. With `TOF_AUTO_CLIMB` = true the old behaviour returns
+(flag `CLIMB`, walk stops, `loop()` runs `climb`).
+
 | Constant | Value | Meaning |
 |---|---|---|
-| `TOF_CLIMB_MM` | 300 | raise `CLIMB` below this |
-| `TOF_CLEAR_MM` | 400 | re-arm above this |
+| `TOF_NEAR_MM` | 30 | closer than this: front legs lift higher |
+| `TOF_NEAR_CLEAR_MM` | 50 | back to normal lift above this |
+| `WALK_FRONT_OBSTACLE_LIFT_US` | 200 | extra front lift while near |
 | `TOF_MAX_MM` | 2000 | beyond = out of range |
 | `TOF_PERIOD_MS` | 50 | sample interval |
-| `TOF_AUTO_CLIMB` | true | `loop()` acts on the flag; false = flag only (`tof` / `climb` by hand) |
-| `CLIMB_LIFT_US`, `CLIMB_RAMP_MS` | 300, 400 | placeholders for the sequence |
+| `TOF_AUTO_CLIMB` | false | true = ToF raises `CLIMB`, stops the walk and runs `climb` |
+| `CLIMB_LIFT_US`, `CLIMB_RAMP_MS` | 300, 400 | placeholders for the climb sequence |
 
 ## Xbox controller
 
