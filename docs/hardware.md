@@ -61,6 +61,22 @@ Mounted at the front, pointing forward, roughly at obstacle height. Range ~1.2 m
 sunlight; readings above `TOF_MAX_MM` (2000) count as "nothing in range". Walking forward it slows from 400 mm, lifts the
 front legs higher, and stops at 100 mm until climb (docs/motion.md); `tof` on the console shows the live reading.
 
+## Leg geometry
+
+Measured by the user 2026-10-05 (renders: the layout follows a real huntsman / wolf spider).
+
+| Segment | Length | Pivot to pivot |
+|---|---|---|
+| Coxa | 23 mm | swing (X) axis to lift (Y) axis - the Y servo is mounted at 90 deg directly on top of the X servo |
+| Femur | 100 mm (103 actual) | lift (Y) axis to knee (K) axis |
+| Tibia | 150 mm | knee (K) axis to foot tip |
+
+Hip (X pivot) to knee is ~120 mm (= coxa + femur). Servos: DSC55MG-class 55 kg, 270 deg over
+500-2500 us = 0.135 deg/us (7.4 us/deg) - before board clock calibration the real pulse may be ~10% short.
+
+The corner legs (forward/back K-Y strokes) already track front-to-back within a few degrees. The middle
+legs swing on X, so their feet draw arcs; straight-line paths need IK on these lengths (CONTEXT.md).
+
 ## Channel map
 
 Verified on the rebuilt robot with `wiggle` (2026-10-03); matches `DEFAULTS` in `src/servo_map.cpp`.

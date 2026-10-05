@@ -99,7 +99,8 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
       the default timebase (read 1.3 ms for a 1500 us command); zoom in, use cursors, or use `calf`
 - [ ] Per-joint mapping: direction, min/max/neutral for all 24 joints
 - [ ] Commit calibrated map back into `servo_map.cpp` (`export`)
-- [ ] Leg geometry (segment lengths) -> inverse kinematics
+- [x] Leg geometry measured (docs/hardware.md): coxa 23, femur 100, tibia 150 mm
+- [ ] Inverse kinematics for the middle legs (straight-line feet) - needs the joint zero angles  <- next
 - [x] Joint-space alternating tetrapod: `walk` / `back` / `turn left|right`. All patterns tested OK on the
       floor (walk/back/turn) with the middle-leg trims.
 - [x] Walk pose (user: too slow, maximise foot travel): middle legs reach out (knee -100), corners spread
