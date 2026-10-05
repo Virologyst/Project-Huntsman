@@ -169,8 +169,14 @@ the body forward** a quarter of its stroke:
 | 5 | BR alone | push |
 
 - Each leg spends 1 phase stepping and 4 pushing, so at most two feet are ever off the ground.
-- Strokes reuse the walk's: front corners reach / pull (K-Y), back corners tuck / push (K-Y), middles swing
-  X (+/- `CLIMB_STRIDE_MID_US` = 100) with the straight-line IK.
+- Strokes: front corners reach / pull (K-Y) - landing much further out than walking (`CLIMB_FRONT_REACH_KNEE_US`
+  = 350, Y -175) while the pull still ends at the walk's -750, so the 1100 us stroke drags the body up onto
+  the obstacle; back corners tuck / push (K-Y); middles swing X +/- `CLIMB_STRIDE_MID_US` = 200 (~27 deg)
+  with the straight-line IK.
+- **Dramatic reach:** from a third of the way through each swing, the stepping leg's knee opens as wide as
+  it goes (`CLIMB_SWING_KNEE_US` = 1100, clamps at the K limit) to reach up and over, then closes to its
+  landing angle as the leg comes down. Aim: reach far over and almost rest the body on the obstacle.
+  Watch FML vs FL and BML vs BL at the ends of the bigger middle swings.
 - **The four front legs lift as high as their Y joints allow** (`CLIMB_FRONT_LIFT_US` = 1100, always clamps
   at the joint limit) and, on the ground, **push the front of the body up** (`CLIMB_FRONT_PUSH_US` = 300
   more femur-down, ~40 deg, ~50-60 mm higher - much further and the foot just swings under the body). Back

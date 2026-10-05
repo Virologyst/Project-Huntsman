@@ -489,8 +489,8 @@ void climbPose(const char *leg, float p, int &xUs, int &yUs, int &kUs) {
     float x, y, k;  // offsets from neutral
     if (isCorner(leg) && isFront(leg)) {  // reach (front of stroke) -> pull (back)
         x = walkBaseX(leg);
-        k = lerpf(cfg::WALK_FRONT_PULL_KNEE_US, cfg::WALK_FRONT_REACH_KNEE_US, p);
-        y = lerpf(cfg::WALK_FRONT_PULL_Y_US, cfg::WALK_FRONT_REACH_Y_US, p);
+        k = lerpf(cfg::WALK_FRONT_PULL_KNEE_US, cfg::CLIMB_FRONT_REACH_KNEE_US, p);
+        y = lerpf(cfg::WALK_FRONT_PULL_Y_US, cfg::CLIMB_FRONT_REACH_Y_US, p);
     } else if (isCorner(leg)) {           // tucked (front of stroke) -> pushed out (back)
         x = walkBaseX(leg);
         k = lerpf(cfg::WALK_REAR_PUSH_KNEE_US, cfg::WALK_REAR_TUCK_KNEE_US, p);
@@ -528,9 +528,12 @@ bool climbPhaseRun(int j, bool (*keepGoing)()) {
         if (CLIMB_GROUP[i] == j) {
             next[i] = 1.0f;
             climbPose(leg, 1.0f, x, y, k);
+            // lift and swing; from a third of the way through, the knee opens as wide as it goes to reach
+            // up and over, then closes to its landing angle as the leg comes down
             tl.addRaw(yj, 0, tSwing, y + climbLift(leg) * servos::joints[yj].dir, EASE_BOTH);
             tl.addRaw(xj, 0, tSwing, x, EASE_BOTH);
-            tl.addRaw(kj, 0, tSwing, k, EASE_BOTH);
+            tl.addRaw(kj, tSwing / 3, tSwing, k + cfg::CLIMB_SWING_KNEE_US * servos::joints[kj].dir, EASE_BOTH);
+            tl.addRaw(kj, tSwing, tSwing + tLower, k, EASE_BOTH);
             if (isCorner(leg) && isFront(leg)) {
                 tl.addRaw(yj, tSwing, tSwing + tLower, y + cfg::WALK_FRONT_APPROACH_US * servos::joints[yj].dir, EASE_IN);
                 tl.addRaw(yj, tSwing + tLower, total, y, EASE_SOFT);

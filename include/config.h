@@ -147,7 +147,11 @@ constexpr int CLIMB_LIFT_US = 550;            // Y up for a stepping leg (BML BM
 constexpr int CLIMB_FRONT_LIFT_US = 1100;     // FL FR FML FMR: as high as they go - always clamps at each Y joint's limit
 constexpr int CLIMB_FRONT_PUSH_US = 300;      // FL FR FML FMR push down this much more on the ground: front of the body up
                                               // (~40 deg on the femur; much further and the foot swings under the body)
-constexpr int CLIMB_STRIDE_MID_US = 100;      // middle legs X each way from base over a full stroke
+constexpr int CLIMB_STRIDE_MID_US = 200;      // middle legs X each way from base over a full stroke (~27 deg; was 100)
+constexpr int CLIMB_FRONT_REACH_KNEE_US = 350; // front corners land this far out (walk: 100); the pull still ends at
+constexpr int CLIMB_FRONT_REACH_Y_US = -175;   // WALK_FRONT_PULL_*, so the stroke drags the body up onto the obstacle
+constexpr int CLIMB_SWING_KNEE_US = 1100;      // in the air every stepping leg's knee opens this far out from its landing
+                                              // knee - always clamps at the K limit: the foot reaches as wide as it can
 constexpr uint16_t CLIMB_SWING_MS = 400;      // stepping leg: lift + reach
 constexpr uint16_t CLIMB_LOWER_MS = 250;      // stepping leg: lower (front feet then touch down over WALK_FRONT_TOUCHDOWN_MS)
 
