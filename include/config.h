@@ -139,7 +139,7 @@ constexpr bool TOF_AUTO_CLIMB = false;        // off: climb is on the controller
 constexpr int WALK_FRONT_OBSTACLE_LIFT_US = 600;  // extra front-leg lift while the ToF reads < TOF_NEAR_MM (was 200; tripled. FL/FR Y clamp at their limits)
 
 // ---------- Climb gait (motion::climb, docs/motion.md) ----------
-// Caterpillar wave, front to back, 5 phases per cycle: FL+FR, FML+FMR, BML+BMR, BL, BR. In each phase that
+// Caterpillar wave, front to back, 4 phases per cycle: FL+FR, FML+FMR, BML+BMR, BL+BR. In each phase that
 // group lifts high, reaches to the front of its stroke and sets down while every other leg pushes the body
 // forward a quarter of its stroke. Front corners use the walk's reach / pull K-Y stroke, back corners the
 // tuck / push stroke, middles swing X (with the straight-line IK when WALK_MID_IK).

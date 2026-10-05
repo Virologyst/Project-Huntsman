@@ -156,7 +156,7 @@ and clamp there.
 
 ## Climb - caterpillar wave (hold LT, or `climb [n]`)
 
-A separate gait (user design, 2026-10-05): a wave that runs **front to back**, 5 phases per cycle. In each
+A separate gait (user design, 2026-10-05): a wave that runs **front to back**, 4 phases per cycle. In each
 phase one group lifts high, reaches to the front of its stroke and sets down, while **every other leg pushes
 the body forward** a quarter of its stroke:
 
@@ -165,10 +165,11 @@ the body forward** a quarter of its stroke:
 | 1 | FL + FR reach out and grab | push |
 | 2 | FML + FMR reach | push |
 | 3 | BML + BMR | push |
-| 4 | BL alone | push |
-| 5 | BR alone | push |
+| 4 | BL + BR together | push |
 
-- Each leg spends 1 phase stepping and 4 pushing, so at most two feet are ever off the ground.
+- Each leg spends 1 phase stepping and 3 pushing (a third of its stroke per phase), so at most two feet are
+  ever off the ground. (First version stepped BL and BR one at a time in phases 4 and 5 - the climb failed at
+  the back legs, so they now step and push together.)
 - Strokes: front corners reach / pull (K-Y) - landing much further out than walking (`CLIMB_FRONT_REACH_KNEE_US`
   = 350, Y -175) while the pull still ends at the walk's -750, so the 1100 us stroke drags the body up onto
   the obstacle; back corners tuck / push (K-Y); middles swing X +/- `CLIMB_STRIDE_MID_US` = 200 (~27 deg)

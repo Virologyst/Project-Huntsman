@@ -474,8 +474,8 @@ void placeGroup(const char *const group[], bool walkPose, motion::Gait g = motio
 // ---- climb gait (caterpillar wave, front to back) ----
 // Legs in wave order; group = the phase in which the leg steps
 const char *const CLIMB_LEGS[8] = {"FL", "FR", "FML", "FMR", "BML", "BMR", "BL", "BR"};
-const int CLIMB_GROUP[8] = {0, 0, 1, 1, 2, 2, 3, 4};
-constexpr int CLIMB_PHASES = 5;
+const int CLIMB_GROUP[8] = {0, 0, 1, 1, 2, 2, 3, 3};  // back pair steps together (BL alone / BR alone failed)
+constexpr int CLIMB_PHASES = 4;
 bool inClimb = false;     // legs are in the climb wave (paused or climbing)
 int climbPhase = 0;       // group stepping next
 float climbP[8] = {};     // stroke position per leg: 1 = front of the stroke, 0 = back
@@ -516,7 +516,7 @@ int climbLift(const char *leg) { return leg[0] == 'F' ? cfg::CLIMB_FRONT_LIFT_US
 // replays the phase from wherever the legs are).
 bool climbPhaseRun(int j, bool (*keepGoing)()) {
     using namespace motion;
-    static const char *const names[] = {"climb: FL FR", "climb: FML FMR", "climb: BML BMR", "climb: BL", "climb: BR"};
+    static const char *const names[] = {"climb: FL FR", "climb: FML FMR", "climb: BML BMR", "climb: BL BR"};
     diag::stage(names[j]);
     bool frontSteps = (j == 0);
     int32_t tSwing = scaled(cfg::CLIMB_SWING_MS), tLower = scaled(cfg::CLIMB_LOWER_MS);

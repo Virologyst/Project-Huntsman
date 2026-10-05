@@ -74,7 +74,7 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
   finish the step and stand.
 - **Diagnostics (diag.h):** reset reason + last stage survive a crash in RTC memory; 3 faults in a row ->
   limp safe mode with Wi-Fi up. Loop stack raised to 16 KB (walk timeline + IK). Boot loop seen 2026-10-05
-  when legs are blocked - suspected stall current / ground (docs/hardware.md); diag will confirm.
+  when legs are blocked - brownouts: fixed by powering the ESP32 from its own 9 V battery, common ground.
 - **Every ramp eases in/out** (trapezoid, 20%) where a joint starts/stops; stance strokes don't slow at the
   ramp joins. **Walk speed scales with the controller stick** (0.4 to 1).
 - **Toolchain: CLion 2026 + bundled PlatformIO plugin** (user prefers JetBrains; no VS Code).
@@ -127,7 +127,7 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - [ ] Wi-Fi control page, battery voltage monitor (ADC1 pin, e.g. GPIO1/2)
 - [x] ToF sensor (VL53L0X) on GPIO 17/18: reading OK (736 mm, 2026-10-05). Now only lifts the front legs
       higher when < 30 mm; no auto-climb
-- [x] Climb gait (user design): caterpillar wave front to back (FL+FR, FML+FMR, BML+BMR, BL, BR), front four
+- [x] Climb gait (user design): caterpillar wave front to back (FL+FR, FML+FMR, BML+BMR, BL+BR), front four
       lift to the Y limit and push the front of the body up; hold LT (speed by pull) / `climb [n]`. Untested
 
 ## Open questions
