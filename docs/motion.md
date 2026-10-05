@@ -155,16 +155,16 @@ listed in its TODO. It must start and end in the stand pose so walking can resum
 ## ToF sensor: higher front step
 
 A forward-facing VL53L0X (docs/hardware.md; own I2C bus on GPIO 17/18) is sampled every 50 ms from
-`loop()` and between walk steps. While it reads closer than **`TOF_NEAR_MM` = 30** (until it passes
-`TOF_NEAR_CLEAR_MM` = 50 again), the front legs lift an extra **`WALK_FRONT_OBSTACLE_LIFT_US` = 600** (clamped at the Y limits) on
-every step, so they step up onto / over what is in front. 30 mm is at the VL53L0X's minimum range - raise
-it if the sensor sits back from the front feet. With `TOF_AUTO_CLIMB` = true the old behaviour returns
+`loop()` and between walk steps. While it reads closer than **`TOF_NEAR_MM` = 300** (until it passes
+`TOF_NEAR_CLEAR_MM` = 350 again), the front legs lift an extra **`WALK_FRONT_OBSTACLE_LIFT_US` = 600** (clamped at the Y limits) on
+every step, so they step up onto / over what is in front. It acts on the next front-leg swing only -
+nothing changes while standing or paused. (Was 30 mm: at the VL53L0X's minimum range it never triggered.) With `TOF_AUTO_CLIMB` = true the old behaviour returns
 (flag `CLIMB`, walk stops, `loop()` runs `climb`).
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `TOF_NEAR_MM` | 30 | closer than this: front legs lift higher |
-| `TOF_NEAR_CLEAR_MM` | 50 | back to normal lift above this |
+| `TOF_NEAR_MM` | 300 | closer than this: front legs lift higher (was 30 - never triggered) |
+| `TOF_NEAR_CLEAR_MM` | 350 | back to normal lift above this |
 | `WALK_FRONT_OBSTACLE_LIFT_US` | 600 | extra front lift while near (was 200). With the normal 500 it passes the Y limits (FL 732, FR 2500 us), so it clamps there: ~1.6x the normal lift in practice |
 | `TOF_MAX_MM` | 2000 | beyond = out of range |
 | `TOF_PERIOD_MS` | 50 | sample interval |

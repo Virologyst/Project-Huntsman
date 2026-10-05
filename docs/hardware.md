@@ -58,14 +58,14 @@ The S3 has no fixed I2C pins - 8/9 are the Arduino-core defaults.
 | XSHUT, GPIO1 | not connected |
 
 Mounted at the front, pointing forward, roughly at obstacle height. Range ~1.2 m indoors, poor in direct
-sunlight; readings above `TOF_MAX_MM` (2000) count as "nothing in range". Below `TOF_NEAR_MM` (30) the front
+sunlight; readings above `TOF_MAX_MM` (2000) count as "nothing in range". Below `TOF_NEAR_MM` (300) the front
 legs lift higher while walking (docs/motion.md); `tof` on the console shows the live reading.
 
 ## Channel map
 
 Verified on the rebuilt robot with `wiggle` (2026-10-03); matches `DEFAULTS` in `src/servo_map.cpp`.
 The live map is in ESP32 flash (`map`). Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
-Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FML X = 1650 (150 us forward) and FMR X = 1350 (150 us forward).
+Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FML K = 1420 (80 us toward the body), FML X = 1650 (150 us forward) and FMR X = 1350 (150 us forward).
 
 | Leg | Board | K (ch / dir) | Y (ch / dir) | X (ch / dir) |
 |---|---|---|---|---|

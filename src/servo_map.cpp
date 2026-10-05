@@ -18,7 +18,7 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"FL",  'K', 1,  2,  732, 2500, 1500, -1, true},
     {"FL",  'Y', 1,  1,  732, 2500, 1500, -1, true},
     {"FL",  'X', 1,  0,  977, 2500, 1500, +1, true},
-    {"FML", 'K', 1,  5,  732, 2500, 1500, +1, true},
+    {"FML", 'K', 1,  5,  732, 2500, 1420, +1, true},  // trimmed 80 us toward the body (sat further out)
     {"FML", 'Y', 1,  3,  732, 2500, 1500, +1, true},
     {"FML", 'X', 1,  4,  977, 2500, 1650, +1, true},  // trimmed 150 us forward - clears BML
     {"BML", 'K', 1, 11,  732, 2500, 1500, -1, true},

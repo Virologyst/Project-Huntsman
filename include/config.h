@@ -107,8 +107,8 @@ constexpr uint8_t TOF_SDA_PIN = 17;           // own I2C bus (Wire1), separate f
 constexpr uint8_t TOF_SCL_PIN = 18;
 constexpr uint16_t TOF_PERIOD_MS = 50;        // continuous ranging interval
 constexpr uint32_t TOF_BUDGET_US = 33000;     // per-sample timing budget (longer = more accurate, max ~PERIOD)
-constexpr int TOF_NEAR_MM = 30;              // closer than this: front legs lift higher (and flags::CLIMB if auto-climb) ...
-constexpr int TOF_NEAR_CLEAR_MM = 50;        // ... until the range passes this again
+constexpr int TOF_NEAR_MM = 300;             // closer than this: front legs lift higher (and flags::CLIMB if auto-climb) ...
+constexpr int TOF_NEAR_CLEAR_MM = 350;       // ... until the range passes this again
 constexpr int TOF_MAX_MM = 2000;              // beyond this = nothing in range (VL53L0X is ~1.2 m indoors)
 constexpr bool TOF_AUTO_CLIMB = false;        // off: climb is on the controller's left trigger. true = ToF flag runs climb
 constexpr int WALK_FRONT_OBSTACLE_LIFT_US = 600;  // extra front-leg lift while the ToF reads < TOF_NEAR_MM (was 200; tripled. FL/FR Y clamp at their limits)
