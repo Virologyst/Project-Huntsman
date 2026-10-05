@@ -283,6 +283,7 @@ void legFor(const MidLeg &m, float r, float h, int &yUs, int &kUs) {
 // Straight-line reference from the walk pose: the foot's sideways distance and drop at the walk base
 struct Line {
     float side, h;
+    int yBase, kBase;  // walk-pose femur / knee pulses (the IK correction is scaled from these)
 };
 Line walkLine(const char *leg, motion::Gait g) {
     MidLeg m = midLeg(leg);
@@ -292,7 +293,7 @@ Line walkLine(const char *leg, motion::Gait g) {
     int kUs = jk.neutralUs + walkKnee(leg) * jk.dir;
     float r, h;
     footAt(m, yUs, kUs, r, h);
-    return {r * sinf(radians(yawAt(m, xUs))), h};
+    return {r * sinf(radians(yawAt(m, xUs))), h, yUs, kUs};
 }
 
 // Femur / knee pulses keeping the foot on its line for X pulse xUs
@@ -300,6 +301,8 @@ void onLine(const char *leg, const Line &line, int xUs, int &yUs, int &kUs) {
     MidLeg m = midLeg(leg);
     float yaw = constrain(yawAt(m, xUs), 20.0f, 160.0f);
     legFor(m, line.side / sinf(radians(yaw)), line.h, yUs, kUs);
+    yUs = line.yBase + (int)lroundf((yUs - line.yBase) * cfg::WALK_MID_IK_GAIN);
+    kUs = line.kBase + (int)lroundf((kUs - line.kBase) * cfg::WALK_MID_IK_GAIN);
 }
 
 // Half a gait cycle (one corner pair swings, the other pushes). Corner legs, three phases:

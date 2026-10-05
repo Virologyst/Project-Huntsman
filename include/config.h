@@ -104,6 +104,7 @@ constexpr float MID_BACK_YAW_DEG = 100.0f;
 // height and reach (instead of arcing around the hip). Turns keep plain X swings.
 constexpr bool WALK_MID_IK = true;
 constexpr int WALK_MID_IK_KNOTS = 6;  // femur / knee waypoints per stance stroke
+constexpr float WALK_MID_IK_GAIN = 2.0f;  // x the IK's femur / knee correction from the walk pose (1 = pure geometry)
 
 // Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
 constexpr bool BOOT_STAND = true;

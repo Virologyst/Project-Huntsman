@@ -66,7 +66,8 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   height: every stance stroke gets `WALK_MID_IK_KNOTS` = 6 femur / knee waypoints as X moves, and every swing
   lands exactly on the line. Lengths and the joint angles at 1500 us are in config.h / docs/hardware.md
   (femur level; knee 110 deg front-middle, 80 deg back-middle; yaw 80 / 100 deg). At the walk pose the IK
-  reproduces the existing pulses exactly, so there is no jump; corrections are ~+/-10 us. Turns keep plain X
+  reproduces the existing pulses exactly, so there is no jump; corrections are ~+/-10 us, multiplied by
+  `WALK_MID_IK_GAIN` = 2 (user: doubled; 1 = pure geometry). Turns keep plain X
   swings (they should follow circles, not lines). Wrong zero angles just leave a little curve: adjust
   `MID_*_KNEE_DEG` / `MID_*_YAW_DEG`.
 - The walk runs as a **timeline** (`Timeline` in motion.cpp): every joint has its own timed segments
