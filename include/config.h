@@ -79,8 +79,12 @@ constexpr int WALK_FRONT_LIFT_US = 500;      // FL FR lift higher than the rest 
 constexpr int WALK_STRIDE_MID_US = 150;     // middle legs X each way from base (~20 deg)
 constexpr int WALK_FML_EXTRA_REACH_US = 46;  // FML only: forward end of its step 30% further (150 -> 196; was 23)
 constexpr int WALK_STRIDE_CORNER_US = 150;  // corner legs X each way from base (turns only)
-constexpr uint16_t WALK_LIFT_MS = 200;   // lift and lower
-constexpr uint16_t WALK_SWING_MS = 400;  // swing / push
+// Turning, the back corners stride around a base shifted this far forward: their tail-most point is then
+// the walking base (320). Unshifted (base - stride = 470 toward the tail) they hit the battery and the
+// ESP32 browned out.
+constexpr int WALK_TURN_REAR_SHIFT_US = 150;
+constexpr uint16_t WALK_LIFT_MS = 200;   // 'down' ramp: swing legs lower (also lift/lower in and out of the walk pose)
+constexpr uint16_t WALK_SWING_MS = 400;  // 'air' ramp: swing legs lift + swing together; stance legs push through every ramp
 
 // Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
 constexpr bool BOOT_STAND = true;

@@ -3,7 +3,7 @@
 Living summary of what this project is, what has been decided and why, and where it is up to.
 **Keep this file current** - update it whenever hardware, decisions, status or next steps change.
 
-_Last updated: 2026-10-04_
+_Last updated: 2026-10-05_
 
 ## What it is
 

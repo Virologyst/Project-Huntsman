@@ -44,8 +44,13 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   - Back-middle legs (BML BMR): X base `WALK_BACK_MID_SPREAD_US` = 60 toward the tail, to stay clear of
     the front-middle legs (FMR/BMR touched at stride 150).
   - The body sits lower in the walk pose (expected).
-- Half-cycle: swing group **lifts** (Y +`WALK_LIFT_US` above the stand pose, 200 ms), **swings** X to
-  base + stride while the stance group **pushes** X to base - stride (400 ms), then **lowers** (200 ms).
+- Half-cycle, **no pause between strides** (2026-10-05): up to three ramps, and the stance group pushes
+  through all of them in proportion to their time, so the body keeps moving:
+  - **air** (`WALK_SWING_MS` 400): swing legs lift (Y +`WALK_LIFT_US`, eased out so the feet clear early)
+    and swing to the start of their next stroke at the same time;
+  - **down** (`WALK_LIFT_MS` 200): swing legs lower (front feet to `WALK_FRONT_APPROACH_US` above the ground);
+  - **touch** (`WALK_FRONT_TOUCHDOWN_MS` 300): front feet set down slowly; handover.
+  About 900 ms per half-cycle (was ~1100 with ~700 ms of it the body standing still).
 - **Front legs pull (`walk` / `back`).** FL and FR hold X at their base and do not stride on it. Swing:
   lift, knee out to `WALK_FRONT_REACH_KNEE_US`, lower to `WALK_FRONT_REACH_Y_US` - the foot is set down
   straight ahead. Stance: knee closes to `WALK_FRONT_PULL_KNEE_US` while Y moves to `WALK_FRONT_PULL_Y_US`,
@@ -61,6 +66,9 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   lift the rear).
 - Direction comes from each X joint's dir (+ = forward). `back` reverses all; `turn left` swings left legs
   back and right legs forward; `turn right` the opposite.
+- **Turning, the back corners stride around a base shifted `WALK_TURN_REAR_SHIFT_US` = 150 forward**, so
+  their tail-most point is the walking base (320). Unshifted they reached 470 toward the tail, hit the
+  battery and browned out the ESP32.
 - `walk 4` = 4 full cycles; `walk` alone = until Enter. Stopping **finishes the current step**, then returns
   to the stand pose.
 - Requires the stand pose (Y and K exactly at stand values); otherwise it says to run `stand`.
