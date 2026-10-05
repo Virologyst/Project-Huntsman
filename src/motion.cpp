@@ -143,8 +143,42 @@ int strokeY(const char *leg, bool extended) {
     return extended ? cfg::WALK_REAR_PUSH_Y_US : cfg::WALK_REAR_TUCK_Y_US;
 }
 
-float speed = 1.0f;  // motion::setSpeed
-int32_t scaled(uint16_t ms) { return max<int32_t>(cfg::FRAME_MS, (int32_t)(ms / speed)); }
+float speed = 1.0f;     // motion::setSpeed (controller stick)
+float approach = 1.0f;  // obstacle slow-down for the current half-step (approachFactor)
+int32_t scaled(uint16_t ms) { return max<int32_t>(cfg::FRAME_MS, (int32_t)(ms / (speed * approach))); }
+
+// ---- obstacle approach (ToF, forward walking only) ----
+bool climbCleared = false;  // climb pressed: forward walking allowed past TOF_STOP_MM until the range clears
+bool obstacleHit = false;   // the last half-step stopped at the obstacle
+bool blockWarned = false;   // obstacle message already printed for this stop
+
+// Forward-walk speed factor from the range: 1 beyond TOF_SLOW_START_MM, then one step slower every
+// TOF_SLOW_STEP_MM (400-300: 0.75, 300-200: 0.5, 200-100: 0.25 with the defaults)
+float approachFactor(motion::Gait g) {
+    int d = tof::distanceMm();
+    if (g != motion::Gait::Forward || !tof::found() || d < 0 || d > cfg::TOF_SLOW_START_MM) return 1.0f;
+    int bands = (cfg::TOF_SLOW_START_MM - cfg::TOF_STOP_MM) / cfg::TOF_SLOW_STEP_MM;
+    int band = constrain((d - cfg::TOF_STOP_MM + cfg::TOF_SLOW_STEP_MM - 1) / cfg::TOF_SLOW_STEP_MM, 1, bands);
+    return (float)band / (bands + 1);
+}
+
+// Forward walking must stop: obstacle at / inside TOF_STOP_MM and climb not pressed for it
+bool obstacleStop(motion::Gait g) {
+    int d = tof::distanceMm();
+    if (d < 0 || d > cfg::TOF_STOP_MM + cfg::TOF_STOP_REARM_MM) climbCleared = false;  // re-arm
+    return g == motion::Gait::Forward && tof::found() && d >= 0 && d <= cfg::TOF_STOP_MM && !climbCleared;
+}
+
+// Per-frame check while walking: the obstacle stop plus the caller's keep-going (controller)
+motion::Gait walkGait = motion::Gait::Forward;
+bool (*walkKeepGoing)() = nullptr;
+bool walkContinue() {
+    if (obstacleStop(walkGait)) {
+        obstacleHit = true;
+        return false;
+    }
+    return !walkKeepGoing || walkKeepGoing();
+}
 
 int startPos(int joint, int fallback) { return servos::position(joint) ? servos::position(joint) : fallback; }
 
@@ -220,6 +254,7 @@ int nextHalf = 0;                             // 0 = group A swings next, 1 = gr
 bool halfCycle(const char *const swing[], const char *const stance[], motion::Gait g,
                bool (*keepGoing)() = nullptr) {
     using namespace motion;
+    approach = approachFactor(g);
     bool forward = g == Gait::Forward;
     bool hasTouch = false;
     for (int k = 0; k < 4; k++)
@@ -436,6 +471,14 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
         Term.println("Not in the stand pose - run 'stand' first.");
         return false;
     }
+    if (obstacleStop(g)) {  // still blocked: say so once, not on every retry
+        if (!blockWarned)
+            Term.printf("Obstacle at %d mm - holding. Press LT (or 'climb') to carry on; back / turn still work.\n",
+                        tof::distanceMm());
+        blockWarned = true;
+        return false;
+    }
+    blockWarned = false;
     const char *name = g == Gait::Forward ? "forward" : g == Gait::Back ? "back"
                      : g == Gait::TurnLeft ? "turn left" : "turn right";
     Term.printf("Walking %s", name);
@@ -453,13 +496,22 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
 
     // Controller: pause mid-step the moment the stick is released and stay in the walk pose.
     // Console: finish the current step on a key / after the cycles, then back to the stand pose.
+    // Both: walking forward stops and holds at an obstacle (TOF_STOP_MM) until climb is pressed.
+    walkGait = g;
+    walkKeepGoing = keepGoing;
     for (int halves = 0; cycles == 0 || halves < cycles * 2; halves++) {
         const char *const *swing = nextHalf == 0 ? GROUP_A : GROUP_B;
         const char *const *stance = nextHalf == 0 ? GROUP_B : GROUP_A;
         int savedMid = midTurn;
-        if (!halfCycle(swing, stance, g, keepGoing)) {
+        obstacleHit = false;
+        if (obstacleStop(g) || !halfCycle(swing, stance, g, walkContinue)) {
             midTurn = savedMid;  // resume replays this half-step from wherever the legs are
-            Term.println("Paused - holding. Push the stick to carry on, A = stand pose, B = sit.");
+            if (obstacleHit || obstacleStop(g)) {
+                Term.printf("Obstacle at %d mm - holding. Press LT (or 'climb') to carry on; back / turn still work.\n",
+                            tof::distanceMm());
+                blockWarned = true;
+            } else
+                Term.println("Paused - holding. Push the stick to carry on, A = stand pose, B = sit.");
             return true;
         }
         nextHalf ^= 1;
@@ -474,6 +526,18 @@ bool walk(Gait g, int cycles, bool (*keepGoing)()) {
     endWalk();
     Term.println(flags::test(flags::CLIMB) ? "Stopped - obstacle ahead, standing." : "Stopped - standing.");
     return true;
+}
+
+bool blocked(Gait g) { return obstacleStop(g); }
+
+void climbPressed() {
+    climbCleared = true;  // unlock forward walking past the obstacle stop
+    if (isStanding()) {
+        climb();
+    } else {
+        Term.printf("Climb: forward walking unlocked past the obstacle (%d mm) - climb sequence not written yet.\n",
+                    tof::distanceMm());
+    }
 }
 
 bool climb() {

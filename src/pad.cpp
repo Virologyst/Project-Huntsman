@@ -123,17 +123,13 @@ void handle() {
         motion::sitDown();
         Term.print("> ");
     } else if (pressLT) {
-        if (motion::isStanding()) {
-            Term.println("\n[pad] LT: climb");
-            motion::climb();
-        } else {
-            Term.println("\n[pad] LT: climb needs the stand pose (A)");
-        }
+        Term.println("\n[pad] LT: climb");
+        motion::climbPressed();
         prevLT = ltPressed();
         Term.print("> ");
     } else {
         Dir d = requested();
-        if (d != Dir::None && motion::canWalk()) {
+        if (d != Dir::None && motion::canWalk() && !motion::blocked(gaitFor(d))) {
             walking = d;
             Term.println("\n[pad] walk (release to pause; push further = faster)");
             motion::setSpeed(stickSpeed());

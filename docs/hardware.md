@@ -58,8 +58,8 @@ The S3 has no fixed I2C pins - 8/9 are the Arduino-core defaults.
 | XSHUT, GPIO1 | not connected |
 
 Mounted at the front, pointing forward, roughly at obstacle height. Range ~1.2 m indoors, poor in direct
-sunlight; readings above `TOF_MAX_MM` (2000) count as "nothing in range". Below `TOF_NEAR_MM` (300) the front
-legs lift higher while walking (docs/motion.md); `tof` on the console shows the live reading.
+sunlight; readings above `TOF_MAX_MM` (2000) count as "nothing in range". Walking forward it slows from 400 mm, lifts the
+front legs higher, and stops at 100 mm until climb (docs/motion.md); `tof` on the console shows the live reading.
 
 ## Channel map
 

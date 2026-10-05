@@ -62,8 +62,9 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - **Xbox controller over BLE, not Classic BT** - the ESP32-S3 has BLE only; Xbox Series / updated One
   controllers speak BLE. Library: asukiaaa XboxSeriesXControllerESP32 (NimBLE, standard Arduino core),
   chosen over Bluepad32 which needs its own core. Needs the `min_spiffs` partition (app grew past 1.25 MB).
-- **Climb is manual (controller LT / `climb`), not ToF-triggered** (user, 2026-10-05). The ToF only raises the
-  front legs' lift while something is < 30 mm ahead. The `CLIMB` flag path is kept behind
+- **Climb is manual (controller LT / `climb`), not ToF-triggered** (user, 2026-10-05). Walking forward the ToF
+  slows the robot from 400 mm (75/50/25%), lifts the front legs higher, and stops it at 100 mm until climb
+  is pressed (which unlocks forward walking until the range clears 150 mm). The `CLIMB` flag path is kept behind
   `TOF_AUTO_CLIMB` = false. VL53L0X on its own I2C bus (Wire1, GPIO 17/18), Pololu library, non-blocking.
 - **Middle legs step 2x per corner half-cycle** (user idea, 2026-10-05) at half stride with feet brought in,
   to cut middle-servo strain; walk is now a per-joint timeline. Balance caveat noted in docs/motion.md.

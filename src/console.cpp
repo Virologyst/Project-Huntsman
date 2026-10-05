@@ -633,7 +633,7 @@ void handle(char *cmdLine) {
         else motion::walk(eq(tok[1], "left") ? motion::Gait::TurnLeft : motion::Gait::TurnRight,
                           n > 2 ? atoi(tok[2]) : 0);
     }
-    else if (eq(c, "climb")) motion::climb();
+    else if (eq(c, "climb")) motion::climbPressed();
     else if (eq(c, "ident")) cmdIdent(tok, n);
     else if (eq(c, "which")) cmdWhich(tok, n);
     else if (eq(c, "p")) cmdPulse(tok, n);

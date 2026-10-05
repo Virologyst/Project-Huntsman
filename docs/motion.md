@@ -145,30 +145,44 @@ and clamp there.
 
 ## Climb - `climb` (controller left trigger)
 
-**Climb is triggered by the controller's left trigger** (LT past half travel, from the stand pose) or the
-`climb` console command. The ToF sensor no longer starts a climb (`TOF_AUTO_CLIMB` = false).
+**Climb is triggered by the controller's left trigger** (LT past half travel) or the `climb` console
+command; it also releases the obstacle stop (below). The ToF sensor no longer starts a climb (`TOF_AUTO_CLIMB` = false).
 
 **The sequence itself is not written yet** - `motion::climb()` in `src/motion.cpp` is a stub that prints
 and returns; the building blocks (`Pose`, `placeGroup`, `rampType`) and `cfg::CLIMB_*` constants are
 listed in its TODO. It must start and end in the stand pose so walking can resume.
 
-## ToF sensor: higher front step
+## ToF sensor: obstacle approach
 
-A forward-facing VL53L0X (docs/hardware.md; own I2C bus on GPIO 17/18) is sampled every 50 ms from
-`loop()` and between walk steps. While it reads closer than **`TOF_NEAR_MM` = 300** (until it passes
-`TOF_NEAR_CLEAR_MM` = 350 again), the front legs lift an extra **`WALK_FRONT_OBSTACLE_LIFT_US` = 600** (clamped at the Y limits) on
-every step, so they step up onto / over what is in front. It acts on the next front-leg swing only -
-nothing changes while standing or paused. (Was 30 mm: at the VL53L0X's minimum range it never triggered.) With `TOF_AUTO_CLIMB` = true the old behaviour returns
-(flag `CLIMB`, walk stops, `loop()` runs `climb`).
+A forward-facing VL53L0X (docs/hardware.md; own I2C bus on GPIO 17/18) is sampled every 20 ms walk frame
+and from `loop()`. **Walking forward** only (back and turns are never slowed or stopped):
+
+| Range ahead | Effect |
+|---|---|
+| > 400 mm | normal |
+| 400-300 mm | 75% speed, and the front legs lift an extra `WALK_FRONT_OBSTACLE_LIFT_US` = 600 (clamped at the Y limits) |
+| 300-200 mm | 50% speed (+ high front lift) |
+| 200-100 mm | 25% speed (+ high front lift) |
+| <= 100 mm | **stops mid-step and holds** until climb is pressed |
+
+The slow-down multiplies the controller stick speed and is set at the start of each half-step. The stop is
+checked every frame. **Climb** (controller LT or `climb`) unlocks forward walking past the stop - walk on
+into the obstacle - until the range goes back beyond 150 mm, which re-arms it. From the stand pose climb
+also runs `motion::climb()` (sequence still TODO). While held, pushing forward does nothing (one message);
+back / turn work. High front lift: below `TOF_NEAR_MM` until above `TOF_NEAR_CLEAR_MM`, on the next
+front-leg swing (nothing changes while standing or paused).
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `TOF_NEAR_MM` | 300 | closer than this: front legs lift higher (was 30 - never triggered) |
-| `TOF_NEAR_CLEAR_MM` | 350 | back to normal lift above this |
-| `WALK_FRONT_OBSTACLE_LIFT_US` | 600 | extra front lift while near (was 200). With the normal 500 it passes the Y limits (FL 732, FR 2500 us), so it clamps there: ~1.6x the normal lift in practice |
+| `TOF_NEAR_MM` / `TOF_NEAR_CLEAR_MM` | 400 / 450 | high front lift band |
+| `WALK_FRONT_OBSTACLE_LIFT_US` | 600 | extra front lift while near (clamps at the Y limits, ~1.6x in practice) |
+| `TOF_SLOW_START_MM` | 400 | start slowing (forward only) |
+| `TOF_SLOW_STEP_MM` | 100 | one speed step per this much closer: 75 / 50 / 25 % |
+| `TOF_STOP_MM` | 100 | stop and hold until climb |
+| `TOF_STOP_REARM_MM` | 50 | climb's unlock lasts until the range passes STOP + this (150 mm) |
 | `TOF_MAX_MM` | 2000 | beyond = out of range |
 | `TOF_PERIOD_MS` | 50 | sample interval |
-| `TOF_AUTO_CLIMB` | false | true = ToF raises `CLIMB`, stops the walk and runs `climb` |
+| `TOF_AUTO_CLIMB` | false | true = old behaviour: ToF raises `CLIMB`, stops the walk and runs `climb` |
 | `CLIMB_LIFT_US`, `CLIMB_RAMP_MS` | 300, 400 | placeholders for the climb sequence |
 
 ## Xbox controller

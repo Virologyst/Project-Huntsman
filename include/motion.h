@@ -53,4 +53,11 @@ void resetWalk();   // forget the walk pose (outputs were turned off)
 // pose. Sequence itself is still TODO (see motion.cpp / cfg::CLIMB_*).
 bool climb();
 
+// Climb button (controller LT / 'climb'): unlocks forward walking past the obstacle stop (TOF_STOP_MM) and
+// runs climb() if standing. Walking forward from the walk pose then carries on.
+void climbPressed();
+
+// Walking this way is held at an obstacle (forward only, inside TOF_STOP_MM, climb not pressed)
+bool blocked(Gait g);
+
 }  // namespace motion
