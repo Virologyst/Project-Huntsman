@@ -17,7 +17,7 @@ PlatformIO env **`wifi`** (in `platformio.ini`) uploads with `espota` to `huntsm
 
 The first Wi-Fi-capable firmware must go on over USB. After that, every build includes OTA, so Wi-Fi uploads
 keep working. If the robot is **standing** when an update starts, it **sits down first**; after the update it
-reboots and (with `BOOT_STAND`) stands up again.
+reboots and (with `BOOT_STAND`) stands up again. Same from a paused walk or climb pose.
 
 CLion's PlatformIO plugin passes its COM-port switcher value (e.g. COM1) as the upload port even for Wi-Fi;
 `scripts/ota_port.py` swaps any serial port back to `custom_ota_host` (huntsman.local) for the wifi env.

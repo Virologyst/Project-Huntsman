@@ -44,7 +44,7 @@ void begin() {
     ArduinoOTA.setHostname(cfg::HOSTNAME);
     ArduinoOTA.onStart([] {
         Term.println("\nOTA update starting.");
-        if (motion::isStanding()) {
+        if (motion::isStanding() || motion::inWalkPose() || motion::inClimbPose()) {
             Term.println("Sitting down first.");
             motion::sitDown();
         }
