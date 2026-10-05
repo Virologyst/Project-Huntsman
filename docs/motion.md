@@ -60,6 +60,15 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   - **touch** (`WALK_FRONT_TOUCHDOWN_MS` 300): front feet set down slowly; handover.
   The corner-leg knee strokes (750-1100 us) run over air + down - too far for a 55 kg servo in 200 ms.
   About 700 ms per half-cycle at full speed.
+- **Middle-leg IK, straight-line feet** (`WALK_MID_IK`, forward / back only; 2026-10-05). The middle legs sit
+  at ~60 deg (front) / ~108 deg (back) from the head, so a plain X swing moves the foot on an arc and it
+  drifts sideways ~5 mm across a stroke. With IK each middle foot keeps the walk pose's sideways distance and
+  height: every stance stroke gets `WALK_MID_IK_KNOTS` = 6 femur / knee waypoints as X moves, and every swing
+  lands exactly on the line. Lengths and the joint angles at 1500 us are in config.h / docs/hardware.md
+  (femur level; knee 110 deg front-middle, 80 deg back-middle; yaw 80 / 100 deg). At the walk pose the IK
+  reproduces the existing pulses exactly, so there is no jump; corrections are ~+/-10 us. Turns keep plain X
+  swings (they should follow circles, not lines). Wrong zero angles just leave a little curve: adjust
+  `MID_*_KNEE_DEG` / `MID_*_YAW_DEG`.
 - The walk runs as a **timeline** (`Timeline` in motion.cpp): every joint has its own timed segments
   (start, end, target, easing) played together each 20 ms frame - that is what lets the middle legs step at
   a different rate from the corners.

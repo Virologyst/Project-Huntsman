@@ -56,7 +56,7 @@ to it must be over USB**; Wi-Fi uploads work again afterwards.
 include/config.h       pins, I2C addresses, hard pulse limits
 include/pwm.h          PCA9685 control, per-board clock calibration   (src/pwm.cpp)
 include/servo_map.h    leg/joint -> board/channel map + calibration   (src/servo_map.cpp)
-include/motion.h       ramps, stand / sit sequences                    (src/motion.cpp)
+include/motion.h       ramps, stand / sit / walk (timeline, middle-leg IK) (src/motion.cpp)
 include/console.h      command console                                 (src/console.cpp)
 include/term.h         console I/O on USB + Wi-Fi at once              (src/term.cpp)
 include/net.h          Wi-Fi, OTA uploads, network console             (src/net.cpp)

@@ -241,6 +241,67 @@ int midTurn = 0;                              // middle sub-cycles so far this w
 bool inWalk = false;                          // legs are in the walk pose (paused or walking)
 int nextHalf = 0;                             // 0 = group A swings next, 1 = group B
 
+// ---- middle-leg IK (lengths and 1500 us joint angles in config.h, docs/hardware.md) ----
+// Angles in degrees from physical pulses. yaw: leg direction from the head, outward (forward swing = smaller).
+// femur: + up from level. knee: angle between femur and tibia (180 = straight out, 90 = tibia square to it).
+struct MidLeg {
+    int x, y, k;           // joint indexes
+    float yaw0, knee0;     // at 1500 us
+};
+
+MidLeg midLeg(const char *leg) {
+    bool front = leg[0] == 'F';
+    return {servos::find(leg, 'X'), servos::find(leg, 'Y'), servos::find(leg, 'K'),
+            front ? cfg::MID_FRONT_YAW_DEG : cfg::MID_BACK_YAW_DEG,
+            front ? cfg::MID_FRONT_KNEE_DEG : cfg::MID_BACK_KNEE_DEG};
+}
+
+float pulseDeg(int joint, int us) { return (us - 1500) * servos::joints[joint].dir / cfg::US_PER_DEG; }
+int degPulse(int joint, float deg) { return 1500 + (int)lroundf(deg * cfg::US_PER_DEG * servos::joints[joint].dir); }
+
+float yawAt(const MidLeg &m, int xUs) { return m.yaw0 - pulseDeg(m.x, xUs); }
+
+// Foot from pulses: reach r (mm, horizontal from the X axis) and drop h (mm below the Y axis)
+void footAt(const MidLeg &m, int yUs, int kUs, float &r, float &h) {
+    float femur = radians(pulseDeg(m.y, yUs));
+    float tibia = femur - radians(180.0f - (m.knee0 + pulseDeg(m.k, kUs)));
+    r = cfg::COXA_MM + cfg::FEMUR_MM * cosf(femur) + cfg::TIBIA_MM * cosf(tibia);
+    h = -(cfg::FEMUR_MM * sinf(femur) + cfg::TIBIA_MM * sinf(tibia));
+}
+
+// Pulses that put the foot at reach r, drop h (knee above the hip-foot line)
+void legFor(const MidLeg &m, float r, float h, int &yUs, int &kUs) {
+    const float F = cfg::FEMUR_MM, T = cfg::TIBIA_MM;
+    float ry = r - cfg::COXA_MM;
+    float d = constrain(sqrtf(ry * ry + h * h), fabsf(F - T) + 1.0f, F + T - 1.0f);
+    float knee = degrees(acosf(constrain((F * F + T * T - d * d) / (2 * F * T), -1.0f, 1.0f)));
+    float femur = degrees(atan2f(-h, ry) + acosf(constrain((F * F + d * d - T * T) / (2 * F * d), -1.0f, 1.0f)));
+    yUs = degPulse(m.y, femur);
+    kUs = degPulse(m.k, knee - m.knee0);
+}
+
+// Straight-line reference from the walk pose: the foot's sideways distance and drop at the walk base
+struct Line {
+    float side, h;
+};
+Line walkLine(const char *leg, motion::Gait g) {
+    MidLeg m = midLeg(leg);
+    const Joint &jx = servos::joints[m.x], &jy = servos::joints[m.y], &jk = servos::joints[m.k];
+    int xUs = jx.neutralUs + walkBaseX(leg, g) * jx.dir;
+    int yUs = jy.neutralUs + cfg::STAND_PUSH_US * jy.dir;
+    int kUs = jk.neutralUs + walkKnee(leg) * jk.dir;
+    float r, h;
+    footAt(m, yUs, kUs, r, h);
+    return {r * sinf(radians(yawAt(m, xUs))), h};
+}
+
+// Femur / knee pulses keeping the foot on its line for X pulse xUs
+void onLine(const char *leg, const Line &line, int xUs, int &yUs, int &kUs) {
+    MidLeg m = midLeg(leg);
+    float yaw = constrain(yawAt(m, xUs), 20.0f, 160.0f);
+    legFor(m, line.side / sinf(radians(yaw)), line.h, yUs, kUs);
+}
+
 // Half a gait cycle (one corner pair swings, the other pushes). Corner legs, three phases:
 //   air   - swing corners lift and swing to the next stroke start (big knee strokes carry on into down)
 //   down  - swing corners lower; front feet stop WALK_FRONT_APPROACH_US above the ground
@@ -327,6 +388,22 @@ bool halfCycle(const char *const swing[], const char *const stance[], motion::Ga
     }
 
     // ---- middle legs: WALK_MID_CYCLES step cycles, pairs alternating ----
+    // With IK (forward / back) the feet stay on straight lines: stance strokes get femur / knee waypoints
+    // as X moves, and each swing lands exactly on the line.
+    bool ik = cfg::WALK_MID_IK && (g == Gait::Forward || g == Gait::Back);
+    const char *const midLegs[] = {"FML", "FMR", "BML", "BMR"};
+    int plannedX[4];
+    Line lines[4];
+    for (int k = 0; k < 4; k++) {
+        int xj = servos::find(midLegs[k], 'X');
+        plannedX[k] = startPos(xj, servos::joints[xj].neutralUs);
+        if (ik) lines[k] = walkLine(midLegs[k], g);
+    }
+    auto slot = [&](const char *leg) {
+        for (int k = 0; k < 4; k++)
+            if (!strcmp(midLegs[k], leg)) return k;
+        return 0;
+    };
     int cycles = max(1, cfg::WALK_MID_CYCLES);
     int32_t sub = total / cycles;
     int32_t subAir = sub * cfg::WALK_SWING_MS / (cfg::WALK_SWING_MS + cfg::WALK_LIFT_MS);
@@ -335,11 +412,41 @@ bool halfCycle(const char *const swing[], const char *const stance[], motion::Ga
         const char *const *up = (midTurn % 2 == 0) ? MID_1 : MID_2;
         const char *const *down = (midTurn % 2 == 0) ? MID_2 : MID_1;
         for (int k = 0; k < 2; k++) {
-            tl.add(up[k], 'Y', s0, s0 + subAir, cfg::STAND_PUSH_US + walkLift(up[k]), EASE_BOTH);
-            tl.add(up[k], 'X', s0, s0 + subAir, strideEnd(up[k], strideSign(up[k], g), g), EASE_BOTH);
-            if (c == 0) tl.add(up[k], 'K', s0, s0 + subAir, walkKnee(up[k]), EASE_BOTH);
-            tl.add(up[k], 'Y', s0 + subAir, s1, cfg::STAND_PUSH_US, EASE_BOTH);
-            tl.add(down[k], 'X', s0, s1, strideEnd(down[k], -strideSign(down[k], g), g), EASE_BOTH);
+            // swing: lift, swing X, land (on the line with IK)
+            const char *leg = up[k];
+            int xj = servos::find(leg, 'X'), yj = servos::find(leg, 'Y'), kj = servos::find(leg, 'K');
+            int xEnd = servos::joints[xj].neutralUs + strideEnd(leg, strideSign(leg, g), g) * servos::joints[xj].dir;
+            int yLand = servos::joints[yj].neutralUs + cfg::STAND_PUSH_US * servos::joints[yj].dir;
+            int kLand = servos::joints[kj].neutralUs + walkKnee(leg) * servos::joints[kj].dir;
+            if (ik) onLine(leg, lines[slot(leg)], xEnd, yLand, kLand);
+            tl.addRaw(yj, s0, s0 + subAir, yLand + walkLift(leg) * servos::joints[yj].dir, EASE_BOTH);
+            tl.addRaw(xj, s0, s0 + subAir, xEnd, EASE_BOTH);
+            if (ik || c == 0) tl.addRaw(kj, s0, s0 + subAir, kLand, EASE_BOTH);
+            tl.addRaw(yj, s0 + subAir, s1, yLand, EASE_BOTH);
+            plannedX[slot(leg)] = xEnd;
+
+            // stance: push X back (femur / knee waypoints keep the foot on its line with IK)
+            leg = down[k];
+            xj = servos::find(leg, 'X');
+            yj = servos::find(leg, 'Y');
+            kj = servos::find(leg, 'K');
+            int xStart = plannedX[slot(leg)];
+            xEnd = servos::joints[xj].neutralUs + strideEnd(leg, -strideSign(leg, g), g) * servos::joints[xj].dir;
+            tl.addRaw(xj, s0, s1, xEnd, EASE_BOTH);
+            if (ik) {
+                const int knots = max(1, cfg::WALK_MID_IK_KNOTS);
+                int32_t tPrev = s0;
+                for (int n = 1; n <= knots; n++) {
+                    int32_t t = s0 + (s1 - s0) * n / knots;
+                    int x = xStart + (int)lroundf((xEnd - xStart) * progress((float)n / knots, EASE_BOTH));
+                    int y, kk;
+                    onLine(leg, lines[slot(leg)], x, y, kk);
+                    tl.addRaw(yj, tPrev, t, y, EASE_NONE);
+                    tl.addRaw(kj, tPrev, t, kk, EASE_NONE);
+                    tPrev = t;
+                }
+            }
+            plannedX[slot(leg)] = xEnd;
         }
     }
     return tl.run(total, keepGoing);

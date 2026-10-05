@@ -89,6 +89,22 @@ constexpr uint16_t WALK_SWING_MS = 200;  // 'air' ramp: swing legs lift + swing 
 constexpr float WALK_MIN_SPEED = 0.4f;   // controller: stick just past the dead zone walks at this speed (full push = 1)
 constexpr float EASE_FRACTION = 0.2f;    // every move speeds up / slows down over this much of its ramp where it starts / stops
 
+// ---------- Leg geometry / middle-leg IK (docs/hardware.md) ----------
+constexpr float COXA_MM = 23.0f;    // swing (X) axis to lift (Y) axis
+constexpr float FEMUR_MM = 100.0f;  // lift (Y) axis to knee (K) axis
+constexpr float TIBIA_MM = 150.0f;  // knee axis to foot tip
+constexpr float US_PER_DEG = 2000.0f / 270.0f;  // 270 deg servos over 500-2500 us
+// Joint angles at 1500 us (physical, before trims): femur level; knee = angle between femur and tibia;
+// yaw = leg direction from the head, outward (left and right the same)
+constexpr float MID_FRONT_KNEE_DEG = 110.0f;  // FML FMR
+constexpr float MID_BACK_KNEE_DEG = 80.0f;    // BML BMR (offset to avoid collisions)
+constexpr float MID_FRONT_YAW_DEG = 80.0f;
+constexpr float MID_BACK_YAW_DEG = 100.0f;
+// Walking forward / back, the middle feet slide in straight lines parallel to the body at the walk pose's
+// height and reach (instead of arcing around the hip). Turns keep plain X swings.
+constexpr bool WALK_MID_IK = true;
+constexpr int WALK_MID_IK_KNOTS = 6;  // femur / knee waypoints per stance stroke
+
 // Run the stand-up sequence automatically after boot (after BOOT_STAND_DELAY_MS; any key cancels)
 constexpr bool BOOT_STAND = true;
 constexpr uint16_t BOOT_STAND_DELAY_MS = 3000;
