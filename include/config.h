@@ -97,9 +97,11 @@ constexpr const char *PAD_ADDRESS = "";
 constexpr float PAD_DEADZONE = 0.5f;   // stick must pass half travel to start walking
 constexpr int PAD_STICK_Y_SIGN = 1;    // set to -1 if stick-forward walks backward ('pad' shows y)
 
-// ---------- Time-of-flight range sensor (VL53L0X, forward-facing, on the PCA9685 I2C bus) ----------
+// ---------- Time-of-flight range sensor (VL53L0X, forward-facing, own I2C bus on GPIO 17 / 18) ----------
 constexpr bool TOF_ENABLED = true;
 constexpr uint8_t TOF_ADDR = 0x29;            // VL53L0X default (fixed unless XSHUT is driven)
+constexpr uint8_t TOF_SDA_PIN = 17;           // own I2C bus (Wire1), separate from the PCA boards on 8 / 9
+constexpr uint8_t TOF_SCL_PIN = 18;
 constexpr uint16_t TOF_PERIOD_MS = 50;        // continuous ranging interval
 constexpr uint32_t TOF_BUDGET_US = 33000;     // per-sample timing budget (longer = more accurate, max ~PERIOD)
 constexpr int TOF_CLIMB_MM = 300;             // closer than this raises flags::CLIMB ...

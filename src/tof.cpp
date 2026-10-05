@@ -27,7 +27,10 @@ bool begin() {
         Term.println("ToF: disabled (cfg::TOF_ENABLED)");
         return false;
     }
-    // Wire is already up (pwm::begin) on cfg::SDA_PIN / SCL_PIN
+    // Own I2C bus (Wire1) on GPIO 17 / 18 - the PCA boards have Wire on 8 / 9
+    Wire1.begin(cfg::TOF_SDA_PIN, cfg::TOF_SCL_PIN);
+    Wire1.setClock(400000);
+    sensor.setBus(&Wire1);
     sensor.setTimeout(100);
     present = sensor.init();
     if (!present) {

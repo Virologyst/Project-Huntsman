@@ -28,7 +28,7 @@ void setup() {
 
     pwm::begin();
     bool saved = servos::load();
-    tof::begin();  // same I2C bus as the PCA boards
+    tof::begin();  // own I2C bus (Wire1) on GPIO 17 / 18
 
     Term.println("\n=== Huntsman calibration console ===");
     for (int b = 1; b <= cfg::BOARD_COUNT; b++)

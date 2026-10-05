@@ -183,8 +183,9 @@ void halfCycle(const char *const swing[], const char *const stance[], motion::Ga
 
     // Spread the stance stroke over the ramps in proportion to their time
     bool hasTouch = touch.n || handover.n;
-    uint32_t tAir = cfg::WALK_SWING_MS, tDown = cfg::WALK_LIFT_MS, tTouch = hasTouch ? cfg::WALK_FRONT_TOUCHDOWN_MS : 0;
-    uint32_t total = tAir + tDown + tTouch;
+    // signed: an unsigned time here turns a negative (end - start) into a huge value -> wild joint moves
+    int32_t tAir = cfg::WALK_SWING_MS, tDown = cfg::WALK_LIFT_MS, tTouch = hasTouch ? cfg::WALK_FRONT_TOUCHDOWN_MS : 0;
+    int32_t total = tAir + tDown + tTouch;
     for (int k = 0; k < stanceEnd.n; k++) {
         int j = stanceEnd.joints[k], end = stanceEnd.targets[k];
         int start = servos::position(j) ? servos::position(j) : end;
