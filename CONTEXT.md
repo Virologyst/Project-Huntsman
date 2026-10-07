@@ -72,6 +72,8 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
 - **Controller walk pauses in place on release** (user, 2026-10-05): no return to the stand pose; stays in
   the walk pose and resumes from the current position. A = back to the stand pose. Console walks still
   finish the step and stand.
+- **Pi 5 is a payload, not a controller.** Its hotspot is just a second Wi-Fi network for updates in
+  the field (secrets.h WIFI_SSID_2); the ESP32 rotates through known networks without blocking.
 - **Diagnostics (diag.h):** reset reason + last stage survive a crash in RTC memory; 3 faults in a row ->
   limp safe mode with Wi-Fi up. Loop stack raised to 16 KB (walk timeline + IK). Boot loop seen 2026-10-05
   when legs are blocked - brownouts: fixed by powering the ESP32 from its own 9 V battery, common ground.

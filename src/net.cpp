@@ -11,6 +11,29 @@ namespace {
 
 WiFiServer server(cfg::CONSOLE_PORT);
 WiFiClient consoleClient;
+// Known networks (secrets.h): home, and optionally a second one such as the Pi payload's hotspot
+struct Network {
+    const char *ssid, *pass;
+};
+const Network NETWORKS[] = {
+    {WIFI_SSID, WIFI_PASSWORD},
+#ifdef WIFI_SSID_2
+    {WIFI_SSID_2, WIFI_PASSWORD_2},
+#endif
+};
+constexpr int NETWORK_COUNT = sizeof(NETWORKS) / sizeof(NETWORKS[0]);
+int current = 0;            // network being tried / used
+uint32_t tryStarted = 0;    // when the current attempt began
+int failedInRow = 0;        // attempts without a connection (a full round = NETWORK_COUNT)
+
+void tryNetwork(int i) {
+    current = i;
+    tryStarted = millis();
+    WiFi.disconnect();
+    WiFi.begin(NETWORKS[i].ssid, NETWORKS[i].pass);
+    Term.printf("Wi-Fi: trying %s\n", NETWORKS[i].ssid);
+}
+
 bool servicesStarted = false;  // OTA, mDNS and console server start on the first connection
 bool reported = false;
 int lastStatus = -1;
@@ -37,9 +60,8 @@ bool connected() { return WiFi.status() == WL_CONNECTED; }
 void begin() {
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(cfg::HOSTNAME);
-    WiFi.setAutoReconnect(true);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    Term.printf("Wi-Fi: connecting to %s\n", WIFI_SSID);
+    WiFi.setAutoReconnect(NETWORK_COUNT == 1);  // with several networks, handle() rotates through them
+    tryNetwork(0);
 
     ArduinoOTA.setHostname(cfg::HOSTNAME);
     ArduinoOTA.onStart([] {
@@ -59,9 +81,16 @@ void handle() {
         if (status != lastStatus) Term.printf("Wi-Fi: %s\n", statusText(status));
         lastStatus = status;
         reported = false;
+        // Rotate through the known networks (WiFi.begin is non-blocking, so the gait never stalls)
+        uint32_t wait = failedInRow >= NETWORK_COUNT ? cfg::WIFI_IDLE_TRY_MS : cfg::WIFI_TRY_MS;
+        if (NETWORK_COUNT > 1 && millis() - tryStarted > wait) {
+            failedInRow++;
+            tryNetwork((current + 1) % NETWORK_COUNT);
+        }
         return;
     }
     lastStatus = status;
+    failedInRow = 0;
     if (!servicesStarted) {
         ArduinoOTA.begin();  // also starts mDNS as HOSTNAME.local
         server.begin();
@@ -69,8 +98,8 @@ void handle() {
         servicesStarted = true;
     }
     if (!reported) {
-        Term.printf("\nWi-Fi connected: %s.local (%s), console on port %u\n", cfg::HOSTNAME,
-                    WiFi.localIP().toString().c_str(), cfg::CONSOLE_PORT);
+        Term.printf("\nWi-Fi connected to %s: %s.local (%s), console on port %u\n", NETWORKS[current].ssid,
+                    cfg::HOSTNAME, WiFi.localIP().toString().c_str(), cfg::CONSOLE_PORT);
         reported = true;
     }
     ArduinoOTA.handle();

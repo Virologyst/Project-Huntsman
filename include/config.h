@@ -9,7 +9,11 @@ constexpr uint32_t SERIAL_BAUD = 115200;
 
 // Wi-Fi (credentials in include/secrets.h). OTA uploads and the console are reached at HOSTNAME.local
 constexpr const char *HOSTNAME = "huntsman";
-constexpr uint16_t CONSOLE_PORT = 23;  // raw TCP console (PlatformIO monitor: socket://huntsman.local:23)
+constexpr uint16_t CONSOLE_PORT = 23;
+// Not connected: try the next known network (secrets.h) after this long. Non-blocking; slower while
+// nothing is found, so the radio spends more time on the controller's Bluetooth.
+constexpr uint32_t WIFI_TRY_MS = 15000;
+constexpr uint32_t WIFI_IDLE_TRY_MS = 60000;  // after a full round with no network  // raw TCP console (PlatformIO monitor: socket://huntsman.local:23)
 
 // I2C to the PCA9685 boards
 constexpr uint8_t SDA_PIN = 8;

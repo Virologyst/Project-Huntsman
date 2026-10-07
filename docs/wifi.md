@@ -28,6 +28,24 @@ Troubleshooting: the console prints Wi-Fi status (not found / failed / lost) on 
 first connection only worked after fitting the antenna and turning off the router's Smart Connect
 (2.4/5 GHz band steering) so the ESP32 sees a 2.4 GHz VNet.
 
+## Second network: the Pi 5 payload's hotspot
+
+The Pi 5 rides along as a payload (it does not control the robot). Away from home it can run a hotspot so a
+laptop can still push updates:
+
+1. On the Pi (Raspberry Pi OS, NetworkManager), once:
+   `sudo nmcli device wifi hotspot ifname wlan0 ssid Huntsman password <password>` then make it start at
+   boot: `sudo nmcli connection modify Hotspot connection.autoconnect yes`. Use 2.4 GHz if asked
+   (`band bg`) - the ESP32 can't see 5 GHz.
+2. In the git-ignored `include/secrets.h`, uncomment `WIFI_SSID_2` / `WIFI_PASSWORD_2` and fill them in.
+   Upload once (at home, over VNet).
+3. In the field: the ESP32 tries each known network in turn (`WIFI_TRY_MS` = 15 s each, then every
+   `WIFI_IDLE_TRY_MS` = 60 s while none is found - non-blocking, so the gait never stalls, and the slower
+   retries leave the radio to the controller). Join the laptop to the Pi's hotspot; CLion Upload and the
+   Wi-Fi monitor reach `huntsman.local` as at home. The boot / connect line says which network it joined.
+
+With only `WIFI_SSID` set it behaves as before (one network, auto-reconnect).
+
 ## Console over Wi-Fi
 
 Raw TCP on port 23 - the same console as USB. Output goes to both; input is accepted from either.
