@@ -3,7 +3,7 @@
 Living summary of what this project is, what has been decided and why, and where it is up to.
 **Keep this file current** - update it whenever hardware, decisions, status or next steps change.
 
-_Last updated: 2026-10-05_
+_Last updated: 2026-10-13_
 
 ## What it is
 
@@ -66,7 +66,13 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
   slows the robot from 400 mm (75/50/25%), lifts the front legs higher, and stops it at 100 mm until climb
   is pressed (which unlocks forward walking until the range clears 150 mm). The `CLIMB` flag path is kept behind
   `TOF_AUTO_CLIMB` = false. VL53L0X on its own I2C bus (Wire1, GPIO 17/18), Pololu library, non-blocking.
-- **Middle legs step 2x per corner half-cycle** (user idea, 2026-10-05) at half stride with feet brought in,
+- **Middle legs back to the hexapod-style gait (user, 2026-10-13):** in step with the corners, plain X swing,
+  no IK - it walked more cleanly on the robot. Corner legs keep push / pull. Double-step and IK stay in the
+  code, off (`WALK_MID_CYCLES`, `WALK_MID_IK`). Plan: micro-improvements from this baseline.
+- **ESP32 power fixed (2026-10-13):** its 5 V buck is fed from the 18 V battery side of the 8.5 V regulator, so
+  servo stalls (which pull the 8.5 V rail down for hundreds of ms - regulator current limit) no longer
+  brown it out. Diode + capacitors alone did not cover it.
+- *(superseded)* **Middle legs step 2x per corner half-cycle** (user idea, 2026-10-05) at half stride with feet brought in,
   to cut middle-servo strain; walk is now a per-joint timeline. Balance caveat noted in docs/motion.md.
   `WALK_MID_CYCLES` = 1 reverts. Untested.
 - **Controller walk pauses in place on release** (user, 2026-10-05): no return to the stand pose; stays in

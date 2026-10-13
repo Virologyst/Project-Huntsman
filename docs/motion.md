@@ -44,7 +44,11 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   - Back-middle legs (BML BMR): X base `WALK_BACK_MID_SPREAD_US` = 60 toward the tail, to stay clear of
     the front-middle legs (FMR/BMR touched at stride 150).
   - The body sits lower in the walk pose (expected).
-- **Middle legs step at their own rate** (`WALK_MID_CYCLES` = 2, 2026-10-05): they take 2 full step cycles
+- **Current middle-leg gait (2026-10-13, user): hexapod-style, in step with the corners.** `WALK_MID_CYCLES` = 1,
+  `WALK_MID_IK` = false, stride 150, FML extra reach 46, lift 350, knee -50 - the plain X swing walked more
+  cleanly on the robot than the double-step + IK version. The corner legs keep their push / pull strokes.
+  The two options below are still in the code, switched off:
+- *(off)* **Middle legs step at their own rate** (`WALK_MID_CYCLES` = 2, tried 2026-10-05): they take 2 full step cycles
   per corner half-cycle, with half the stride (`WALK_STRIDE_MID_US` = 75) so the body speed matches, and
   their feet brought in (`WALK_MID_KNEE_US` = -150). The pairs **BML+FMR** and **FML+BMR** alternate every
   middle step through the whole walk. Each middle step: lift + swing X (first half), lower (second half);
@@ -60,7 +64,7 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
   - **touch** (`WALK_FRONT_TOUCHDOWN_MS` 300): front feet set down slowly; handover.
   The corner-leg knee strokes (750-1100 us) run over air + down - too far for a 55 kg servo in 200 ms.
   About 700 ms per half-cycle at full speed.
-- **Middle-leg IK, straight-line feet** (`WALK_MID_IK`, forward / back only; 2026-10-05). The middle legs sit
+- *(off)* **Middle-leg IK, straight-line feet** (`WALK_MID_IK`, forward / back only; tried 2026-10-05). The middle legs sit
   at ~60 deg (front) / ~108 deg (back) from the head, so a plain X swing moves the foot on an arc and it
   drifts sideways ~5 mm across a stroke. With IK each middle foot keeps the walk pose's sideways distance and
   height: every stance stroke gets `WALK_MID_IK_KNOTS` = 6 femur / knee waypoints as X moves, and every swing
@@ -112,8 +116,8 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `WALK_MID_KNEE_US` | -150 | middle-leg knee in the walk pose (was -50: feet brought in) |
-| `WALK_MID_CYCLES` | 2 | middle-leg step cycles per corner half-cycle (1 = in step with the corners) |
+| `WALK_MID_KNEE_US` | -50 | middle-leg knee in the walk pose (-150 while double-stepping) |
+| `WALK_MID_CYCLES` | 1 | middle-leg step cycles per corner half-cycle (1 = in step with the corners; 2 = double-step) |
 | `WALK_CORNER_KNEE_US` | -200 | corner-leg knee in the walk pose |
 | `WALK_FRONT_SPREAD_US` | 400 | FL FR X base toward the head (~54 deg; was 220) |
 | `WALK_FRONT_REACH_KNEE_US` | 100 | front-leg knee at full reach (was 260: worked too far from the body) |
@@ -129,11 +133,11 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 | `WALK_REAR_PUSH_KNEE_US` | 200 | back-leg knee at the end of the push (was -50: knee travel doubled to 500 us) |
 | `WALK_REAR_PUSH_Y_US` | -140 | back-leg Y at the end of the push (was -100) |
 | `WALK_BACK_MID_SPREAD_US` | 60 | BML BMR X base toward the tail (middle-leg clearance) |
-| `WALK_MID_LIFT_US` | 550 | middle-leg lift: their swing is only ~175 ms, so aim higher to actually clear the ground |
+| `WALK_MID_LIFT_US` | 350 | middle-leg lift (550 while double-stepping) |
 | `WALK_LIFT_US` | 350 | Y up from the stand pose during swing (was 150: only ~10 mm clearance) |
 | `WALK_FRONT_LIFT_US` | 500 | same, for FL FR only (was 300) |
-| `WALK_STRIDE_MID_US` | 75 | middle-leg X each way from base per middle step (150 at 1 cycle) |
-| `WALK_FML_EXTRA_REACH_US` | 23 | FML only: forward end of its step further (46 at stride 150, halved with it) |
+| `WALK_STRIDE_MID_US` | 150 | middle-leg X each way from base per step (~20 deg; 75 at 2 cycles) |
+| `WALK_FML_EXTRA_REACH_US` | 46 | FML only: forward end of its step 30% further (23 at 2 cycles) |
 | `WALK_STRIDE_CORNER_US` | 150 | corner-leg X each way from base (turns only) |
 | `WALK_LIFT_MS` | 200 | lift / lower ramp |
 | `WALK_SWING_MS` | 400 | swing / push ramp |

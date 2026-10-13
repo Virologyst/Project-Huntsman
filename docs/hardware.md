@@ -30,8 +30,10 @@ The ESP32 resets - even on its own supply - when legs can't move: stalled 55 kg 
 current (several A each). Likely paths: the stall current through shared ground wiring shifts the ESP32 /
 PCA ground (brownout or I2C glitch), or the "separate" supply still hangs off the same battery. A reset then
 re-centres and stands, the blocked leg stalls again: boot loop. Firmware now logs the reset reason
-(`diag`) and drops to a limp **safe mode** after 3 faults in a row. **Fixed 2026-10-05: ESP32 powered from its own 9 V
-battery with a common ground - the resets stopped (they were brownouts).** Other hardware options:
+(`diag`) and drops to a limp **safe mode** after 3 faults in a row. **Fixed: first with the ESP32 on its own 9 V battery (2026-10-05), then properly
+(2026-10-13) by feeding the ESP32's 5 V buck from the 18 V battery side of the 8.5 V regulator.** A stall pulls
+the 8.5 V rail down for hundreds of ms (the regulator current-limits), far longer than a diode + capacitor
+on the 5 V line can cover (~10-15 ms). The buck must be rated above the pack's ~21 V. Other hardware options:
 - Servo power returns to the battery on its own heavy ground wire; ESP32 / PCA ground joins it at **one point**
   (star ground) at the battery / bus bar, not through the servo harness.
 - Large low-ESR capacitors (1000-2200 uF) across each servo power group, close to the servos.

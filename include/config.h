@@ -48,7 +48,7 @@ constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo fra
 // pose into the walk pose (lift, place, lower) and ends by returning to the stand pose. Each half-cycle:
 // swing group lifts, swings X to base + stride while the stance group pushes X to base - stride, lowers.
 // Walk pose (offsets from neutral, + = knee up / swing forward):
-constexpr int WALK_MID_KNEE_US = -150;      // middle legs: knee out from the stand's -300 (was -50: feet brought in, less strain)
+constexpr int WALK_MID_KNEE_US = -50;       // middle legs: knee out from the stand's -300 -> feet reach out (-150 while they double-stepped)
 constexpr int WALK_CORNER_KNEE_US = -200;   // corner legs: straightened a little from -300
 constexpr int WALK_FRONT_SPREAD_US = 400;   // FL FR X base toward the head (~54 deg; was 220, +~25 deg 2026-10-04)
 // Front legs walking forward / back do not stride on X: X holds at the base above and the foot reaches
@@ -78,12 +78,13 @@ constexpr int WALK_REAR_TUCK_Y_US = -20;        // Y when the tucked foot is set
 constexpr int WALK_REAR_PUSH_KNEE_US = 200;     // knee out at the end of the push (was -50, travel doubled)
 constexpr int WALK_REAR_PUSH_Y_US = -140;       // Y at the end of the push (was -100)
 constexpr int WALK_BACK_MID_SPREAD_US = 60; // BML BMR X base toward the tail: clears FML/FMR at the longer stride
-constexpr int WALK_MID_LIFT_US = 550;       // middle legs: their swing is only ~175 ms at 2 cycles, so aim higher to clear the ground
+constexpr int WALK_MID_LIFT_US = 350;       // middle legs (550 while they double-stepped: that swing was only ~175 ms)
 constexpr int WALK_LIFT_US = 350;           // Y up from the stand pose while swinging (was 150: ~10 mm clearance, too low to step over things)
 constexpr int WALK_FRONT_LIFT_US = 500;      // FL FR lift higher than the rest (was 300; raised with WALK_LIFT_US)
-constexpr int WALK_MID_CYCLES = 2;          // middle legs take this many full steps per corner half-cycle (1 = in step with the corners)
-constexpr int WALK_STRIDE_MID_US = 75;      // middle legs X each way from base per step (was 150 at 1 cycle; halved for 2)
-constexpr int WALK_FML_EXTRA_REACH_US = 23;  // FML only: forward end of its step further (was 46 at stride 150; halved with the stride)
+constexpr int WALK_MID_CYCLES = 1;          // middle-leg steps per corner half-cycle: 1 = in step with the corners (hexapod-style
+                                            // tetrapod, user preferred 2026-10-13); 2 = double-step (then halve the stride + extra)
+constexpr int WALK_STRIDE_MID_US = 150;     // middle legs X each way from base per step (~20 deg; 75 at 2 cycles)
+constexpr int WALK_FML_EXTRA_REACH_US = 46;  // FML only: forward end of its step 30% further (23 at 2 cycles)
 constexpr int WALK_STRIDE_CORNER_US = 150;  // corner legs X each way from base (turns only)
 // Turning, the back corners stride around a base shifted this far forward: their tail-most point is then
 // the walking base (320). Unshifted (base - stride = 470 toward the tail) they hit the battery and the
@@ -107,7 +108,7 @@ constexpr float MID_FRONT_YAW_DEG = 80.0f;
 constexpr float MID_BACK_YAW_DEG = 100.0f;
 // Walking forward / back, the middle feet slide in straight lines parallel to the body at the walk pose's
 // height and reach (instead of arcing around the hip). Turns keep plain X swings.
-constexpr bool WALK_MID_IK = true;
+constexpr bool WALK_MID_IK = false;  // off 2026-10-13: the plain X swing walked more cleanly on the robot
 constexpr int WALK_MID_IK_KNOTS = 6;  // femur / knee waypoints per stance stroke
 constexpr float WALK_MID_IK_GAIN = 2.0f;  // x the IK's femur / knee correction from the walk pose (1 = pure geometry)
 
