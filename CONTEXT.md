@@ -5,6 +5,25 @@ Living summary of what this project is, what has been decided and why, and where
 
 _Last updated: 2026-10-13_
 
+## Status: prototype 1 finished (2026-10-13)
+
+The user is happy with prototype 1 and has parked it. Tagged `prototype-1` in git. It stands on boot, walks
+(hexapod-style tetrapod: middle legs swing X in step, corner legs push / pull), turns, pauses in place on
+stick release, slows and stops at obstacles (ToF), climbs with a front-to-back wave on LT, takes updates over
+Wi-Fi, and logs reset reasons with a crash-loop safe mode. Power: ESP32 5 V buck fed from the 18 V side.
+
+**Prototype 2 is being built** (hardware first, gait work resumes after):
+- More clearance for the X-axis (swing) servos
+- 75 kg.cm servos on the Y axis (lift)
+- A larger 8.5 V regulator (prototype 1's current-limited under stall)
+- Pressure sensors in the feet; tilt sensors on the body
+
+When work resumes, expect: a new joint map / `wiggle` run and new limits (different servos and geometry), new
+leg measurements for the IK (kept in the code, off), foot-contact sensing to replace the guessed touchdown
+heights (`WALK_FRONT_REACH_Y_US` etc.) and to detect a blocked leg, and tilt feedback for the climb (it fell
+backwards on prototype 1 before the nose-up push was reduced). Never done on prototype 1: PCA9685 clock
+calibration, per-joint min / max (still the old UNO-prototype values), a battery voltage monitor.
+
 ## What it is
 
 An 8-legged spider robot ("Huntsman") that walks while carrying a load.
