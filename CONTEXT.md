@@ -3,7 +3,7 @@
 Living summary of what this project is, what has been decided and why, and where it is up to.
 **Keep this file current** - update it whenever hardware, decisions, status or next steps change.
 
-_Last updated: 2026-10-13_
+_Last updated: 2026-10-16_
 
 ## Status: prototype 1 finished (2026-10-13)
 
@@ -77,7 +77,7 @@ and a way to share the console with the PlatformIO monitor (e.g. a second port).
   except FML X = 1650 and FMR X = 1350 (150 forward, FMR was 100; added after the middle legs clashed with
   BML/BMR in the first `walk 2` - adjacent legs are in opposite tetrapod groups and swing toward each
   other). Map version 5 resets flash to the
-  code defaults (same board/channel/dir as the wiggle run).
+  code defaults (same board/channel/dir as the wiggle run)). Map version 6 (2026-10-16) adds stand-posture trims from the user: FL K = 1400 / Y = 1580 and BMR K = 1600 / Y = 1420 (foot ~20 mm lower in the stand, 2026-10-16), FML K = 1435 / Y = 1395 (foot ~40 mm closer in and ~20 mm lower). Estimated from the leg geometry (~7.4 us/deg); fine-tune with `setneutral` + `save`.
 - **Xbox controller over BLE, not Classic BT** - the ESP32-S3 has BLE only; Xbox Series / updated One
   controllers speak BLE. Library: asukiaaa XboxSeriesXControllerESP32 (NimBLE, standard Arduino core),
   chosen over Bluepad32 which needs its own core. Needs the `min_spiffs` partition (app grew past 1.25 MB).

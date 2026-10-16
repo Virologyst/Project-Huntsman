@@ -15,11 +15,11 @@ namespace {
 // Arduino UNO prototype values (ticks x 4.883 us, clamped to 500-2500) - UNVERIFIED.
 const Joint DEFAULTS[servos::COUNT] = {
     // leg    J   brd ch   min   max  neutral dir  wired
-    {"FL",  'K', 1,  2,  732, 2500, 1500, -1, true},
-    {"FL",  'Y', 1,  1,  732, 2500, 1500, -1, true},
+    {"FL",  'K', 1,  2,  732, 2500, 1400, -1, true},  // stand trim: foot ~20 mm lower (knee open 100)
+    {"FL",  'Y', 1,  1,  732, 2500, 1580, -1, true},  // stand trim: foot ~20 mm lower (Y down 80)
     {"FL",  'X', 1,  0,  977, 2500, 1500, +1, true},
-    {"FML", 'K', 1,  5,  732, 2500, 1420, +1, true},  // trimmed 80 us toward the body (sat further out)
-    {"FML", 'Y', 1,  3,  732, 2500, 1500, +1, true},
+    {"FML", 'K', 1,  5,  732, 2500, 1435, +1, true},  // 80 toward the body, then +15: foot ~40 mm in, ~20 mm lower
+    {"FML", 'Y', 1,  3,  732, 2500, 1395, +1, true},  // stand trim: Y down 105 (with K above)
     {"FML", 'X', 1,  4,  977, 2500, 1650, +1, true},  // trimmed 150 us forward - clears BML
     {"BML", 'K', 1, 11,  732, 2500, 1500, -1, true},
     {"BML", 'Y', 1,  9,  732, 2500, 1500, -1, true},
@@ -33,8 +33,8 @@ const Joint DEFAULTS[servos::COUNT] = {
     {"FMR", 'K', 2, 10,  732, 2500, 1500, -1, true},
     {"FMR", 'Y', 2,  9,  732, 2500, 1500, -1, true},
     {"FMR", 'X', 2, 11,  977, 2500, 1350, -1, true},  // trimmed 150 us forward (dir -1) - clears BMR
-    {"BMR", 'K', 2,  4,  732, 2500, 1500, +1, true},
-    {"BMR", 'Y', 2,  6,  732, 2500, 1500, +1, true},
+    {"BMR", 'K', 2,  4,  732, 2500, 1600, +1, true},  // stand trim: foot ~20 mm lower (knee open 100)
+    {"BMR", 'Y', 2,  6,  732, 2500, 1420, +1, true},  // stand trim: foot ~20 mm lower (Y down 80)
     {"BMR", 'X', 2,  5,  977, 2500, 1500, -1, true},
     {"BR",  'K', 2,  1,  732, 2500, 1500, -1, true},
     {"BR",  'Y', 2,  0,  732, 2500, 1500, -1, true},
@@ -49,8 +49,9 @@ struct Cal {
     uint8_t wired;
 } __attribute__((packed));
 
-constexpr uint8_t CAL_VERSION = 5;  // v2 board/channel, v3 wired, v4 = reset to wiggle-verified defaults,
-                                    // v5 = reset to defaults with FMR X trim 100 -> 150
+constexpr uint8_t CAL_VERSION = 6;  // v2 board/channel, v3 wired, v4 = reset to wiggle-verified defaults,
+                                    // v5 = reset to defaults with FMR X trim 100 -> 150,
+                                    // v6 = stand trims FL / FML / BMR (2026-10-16)
 
 }  // namespace
 

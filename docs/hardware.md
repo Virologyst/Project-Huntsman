@@ -104,7 +104,7 @@ legs swing on X, so their feet draw arcs; straight-line paths need IK on these l
 
 Verified on the rebuilt robot with `wiggle` (2026-10-03); matches `DEFAULTS` in `src/servo_map.cpp`.
 The live map is in ESP32 flash (`map`). Joint letters: **K = knee, Y = lift (femur), X = swing (coxa)**.
-Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FML K = 1420 (80 us toward the body), FML X = 1650 (150 us forward) and FMR X = 1350 (150 us forward).
+Dir: + = lift up, knee up, swing forward. Neutral (centre) is 1500 for all joints except FL K = 1400 / Y = 1580 and BMR K = 1600 / Y = 1420 (foot ~20 mm lower in the stand, 2026-10-16), FML K = 1435 / Y = 1395 (foot ~40 mm closer in and ~20 mm lower), FML X = 1650 (150 us forward) and FMR X = 1350 (150 us forward).
 
 | Leg | Board | K (ch / dir) | Y (ch / dir) | X (ch / dir) |
 |---|---|---|---|---|

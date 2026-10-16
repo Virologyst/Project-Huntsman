@@ -3,7 +3,7 @@
 All motion uses the joint map (board/channel/dir from `wiggle`, stored in flash). Every offset is from
 the joint's **neutral** (its centre / trim) and follows its `dir`: **+ = lift up, knee up, swing forward**.
 Neutral is 1500 for every joint except **FML X = 1650** (150 us forward) and **FMR X = 1350** (150 us
-forward - FMR's dir is -1). The trims keep the front-middle legs clear of the back-middle legs when walking. Trim any joint with
+forward - FMR's dir is -1). The trims keep the front-middle legs clear of the back-middle legs when walking. Stand trims (2026-10-16, mm estimates from the leg geometry): FL K = 1400 / Y = 1580 and BMR K = 1600 / Y = 1420 (foot ~20 mm lower in the stand, 2026-10-16), FML K = 1435 / Y = 1395 (foot ~40 mm closer in and ~20 mm lower); they carry into walk, climb and sit. Trim any joint with
 `setneutral <leg> <joint> <us>` then `save`. Moves are linear ramps updated every 20 ms (one
 servo frame); all joints in a step move together. **Any key aborts a move and holds position.**
 
