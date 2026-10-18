@@ -30,21 +30,25 @@ first connection only worked after fitting the antenna and turning off the route
 
 ## Second network: the Pi 5 payload's hotspot
 
-The Pi 5 rides along as a payload (it does not control the robot). Away from home it can run a hotspot so a
-laptop can still push updates:
+The Pi 5 payload (separate project, `C:/Users/craig/PycharmProjects/Huntsman-Payload`) runs the hotspot
+**`Huntsman PL01`** (2.4 GHz, Pi at 10.42.0.1) when it can't find the home Wi-Fi, and drives the robot from
+its dashboard over this console.
 
-1. On the Pi (Raspberry Pi OS, NetworkManager), once:
-   `sudo nmcli device wifi hotspot ifname wlan0 ssid Huntsman password <password>` then make it start at
-   boot: `sudo nmcli connection modify Hotspot connection.autoconnect yes`. Use 2.4 GHz if asked
-   (`band bg`) - the ESP32 can't see 5 GHz.
-2. In the git-ignored `include/secrets.h`, uncomment `WIFI_SSID_2` / `WIFI_PASSWORD_2` and fill them in.
-   Upload once (at home, over VNet).
+1. The Pi side is set up by the payload project (`deploy/hotspot`, its `docs/pi-setup.md`).
+2. In the git-ignored `include/secrets.h`, `WIFI_SSID_2` / `WIFI_PASSWORD_2` hold the hotspot (set
+   2026-10-18). Upload once (at home, over VNet).
 3. In the field: the ESP32 tries each known network in turn (`WIFI_TRY_MS` = 15 s each, then every
    `WIFI_IDLE_TRY_MS` = 60 s while none is found - non-blocking, so the gait never stalls, and the slower
    retries leave the radio to the controller). Join the laptop to the Pi's hotspot; CLion Upload and the
    Wi-Fi monitor reach `huntsman.local` as at home. The boot / connect line says which network it joined.
 
 With only `WIFI_SSID` set it behaves as before (one network, auto-reconnect).
+
+**Switching on command - `wifi [n]`** (added 2026-10-18 for the payload's router / hotspot button): `wifi`
+lists the known networks; `wifi 2` leaves the current network and keeps retrying network 2 every
+`WIFI_PIN_RETRY_MS` = 8 s for `WIFI_PIN_MS` = 60 s (the hotspot may still be starting) before normal
+rotation resumes. The console connection drops when it switches. Without the command the robot only moves
+when its current network fails, so it would stay on the home Wi-Fi while the Pi runs the hotspot.
 
 ## Console over Wi-Fi
 

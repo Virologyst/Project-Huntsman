@@ -25,6 +25,8 @@ constexpr int NETWORK_COUNT = sizeof(NETWORKS) / sizeof(NETWORKS[0]);
 int current = 0;            // network being tried / used
 uint32_t tryStarted = 0;    // when the current attempt began
 int failedInRow = 0;        // attempts without a connection (a full round = NETWORK_COUNT)
+int pinned = -1;            // network chosen with 'wifi <n>': retried instead of rotating until pinUntil
+uint32_t pinUntil = 0;
 
 void tryNetwork(int i) {
     current = i;
@@ -55,6 +57,24 @@ namespace net {
 
 WiFiClient &client() { return consoleClient; }
 
+void printNetworks() {
+    for (int i = 0; i < NETWORK_COUNT; i++)
+        Term.printf("  %d: %s%s\n", i + 1, NETWORKS[i].ssid, i == current && connected() ? "  <- connected" : "");
+}
+
+bool useNetwork(int index, uint32_t holdMs) {
+    if (index < 0 || index >= NETWORK_COUNT) return false;
+    Term.printf("Wi-Fi: switching to %s (the console connection drops)\n", NETWORKS[index].ssid);
+    consoleClient.flush();
+    delay(100);
+    pinned = index;
+    pinUntil = millis() + holdMs;
+    failedInRow = 0;
+    reported = false;
+    tryNetwork(index);
+    return true;
+}
+
 bool connected() { return WiFi.status() == WL_CONNECTED; }
 
 void begin() {
@@ -81,6 +101,12 @@ void handle() {
         if (status != lastStatus) Term.printf("Wi-Fi: %s\n", statusText(status));
         lastStatus = status;
         reported = false;
+        // 'wifi <n>': stay on the chosen network for a while (the payload's hotspot may still be starting)
+        if (pinned >= 0 && (int32_t)(pinUntil - millis()) > 0) {
+            if (millis() - tryStarted > cfg::WIFI_PIN_RETRY_MS) tryNetwork(pinned);
+            return;
+        }
+        pinned = -1;
         // Rotate through the known networks (WiFi.begin is non-blocking, so the gait never stalls)
         uint32_t wait = failedInRow >= NETWORK_COUNT ? cfg::WIFI_IDLE_TRY_MS : cfg::WIFI_TRY_MS;
         if (NETWORK_COUNT > 1 && millis() - tryStarted > wait) {
@@ -91,6 +117,7 @@ void handle() {
     }
     lastStatus = status;
     failedInRow = 0;
+    pinned = -1;
     if (!servicesStarted) {
         ArduinoOTA.begin();  // also starts mDNS as HOSTNAME.local
         server.begin();

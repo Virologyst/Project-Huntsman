@@ -73,6 +73,7 @@ forward**, so `dir` is +1 when the 1550 move went up/forward and -1 when it went
 |---|---|
 | `diag` | last reset reason (power on / update / CRASH / BROWNOUT / watchdog), what it was doing just before, faults in a row, free heap, loop stack left |
 | `reboot` | software restart (also leaves safe mode) |
+| `wifi [n]` | list known networks / switch to network n (docs/wifi.md) |
 
 Every boot prints `Boot #n - last reset: <reason> while '<stage>'`. After `DIAG_SAFE_MODE_RESETS` = 3
 crash / brownout / watchdog resets in a row (each within a minute of booting) it starts in **safe mode**:

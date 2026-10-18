@@ -27,6 +27,14 @@ Knee "toward the body" is the knee-DOWN direction in the dir convention (verifie
 
 Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 ms each).
 
+## Squat - `squat [s]`
+
+From the stand pose only: all Y to centre (lowers the body, `STAND_PUSH_MS` = 750 ms - the first step of
+`sit`, feet stay put), hold `s` seconds (default `SQUAT_HOLD_MS` = 3 s; prints `Squatting.`), then Y back to
+`STAND_PUSH_US` (prints `Standing.`). Ends in the exact stand pose, so walking works straight after. Any key
+aborts and holds low. Used by the payload's "Take Reading" button (probe under the body) - added 2026-10-18,
+**untested on the robot**.
+
 ## Walk - `walk`, `back`, `turn left|right`
 
 Joint-space **alternating tetrapod** (no inverse kinematics yet):

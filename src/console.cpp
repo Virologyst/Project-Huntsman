@@ -629,6 +629,14 @@ void handle(char *cmdLine) {
     else if (eq(c, "wiggle")) cmdWiggle(tok, n);
     else if (eq(c, "stand")) motion::standUp(n > 1 && eq(tok[1], "step"));
     else if (eq(c, "sit")) motion::sitDown();
+    else if (eq(c, "squat")) motion::squat(n > 1 ? (uint32_t)(max(0.0, atof(tok[1])) * 1000) : cfg::SQUAT_HOLD_MS);
+    else if (eq(c, "wifi")) {
+        if (n < 2) {
+            net::printNetworks();
+            Term.println("Usage: wifi <n> - switch to network n (the console connection drops)");
+        } else if (!net::useNetwork(atoi(tok[1]) - 1, cfg::WIFI_PIN_MS))
+            Term.println("No such network - 'wifi' lists them");
+    }
     else if (eq(c, "walk")) motion::walk(motion::Gait::Forward, n > 1 ? atoi(tok[1]) : 0);
     else if (eq(c, "back")) motion::walk(motion::Gait::Back, n > 1 ? atoi(tok[1]) : 0);
     else if (eq(c, "turn")) {
@@ -669,6 +677,8 @@ void printHelp() {
         "\nMotion (any key aborts and holds):\n"
         "  stand | stand step     centre -> Y up -> K tuck -> Y down (step = Enter before each step)\n"
         "  sit                    lower the body, everything back to centre\n"
+        "  squat [s]              from the stand pose: lower the body, hold s seconds (default 3), stand\n"
+        "  wifi [n]               list known networks / switch to network n (e.g. the payload hotspot)\n"
         "  walk [n] | back [n] | turn left|right [n]   tetrapod gait from the stand pose;\n"
         "                         n cycles or until a key (finishes the step, ends standing)\n"
         "  climb [n]              climb wave, n cycles (default 1), then back to the stand pose\n"

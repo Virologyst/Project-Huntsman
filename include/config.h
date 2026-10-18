@@ -14,6 +14,10 @@ constexpr uint16_t CONSOLE_PORT = 23;
 // nothing is found, so the radio spends more time on the controller's Bluetooth.
 constexpr uint32_t WIFI_TRY_MS = 15000;
 constexpr uint32_t WIFI_IDLE_TRY_MS = 60000;  // after a full round with no network  // raw TCP console (PlatformIO monitor: socket://huntsman.local:23)
+// 'wifi <n>' (payload switching to / from its hotspot): keep retrying the chosen network this long before
+// rotating again - the hotspot may still be starting up when the robot gets the command.
+constexpr uint32_t WIFI_PIN_MS = 60000;
+constexpr uint32_t WIFI_PIN_RETRY_MS = 8000;  // long enough for a WPA join + DHCP
 
 // I2C to the PCA9685 boards
 constexpr uint8_t SDA_PIN = 8;
@@ -40,6 +44,7 @@ constexpr int STAND_TUCK_US = -300;   // K toward the body (verified: + moves th
 constexpr int STAND_PUSH_US = -100;   // Y down: feet push the body off the ground
 constexpr uint16_t STAND_RAMP_MS = 500;   // centre, lift and tuck ramps
 constexpr uint16_t STAND_PUSH_MS = 750;   // the loaded push, slower
+constexpr uint32_t SQUAT_HOLD_MS = 3000;  // 'squat': time held low (payload "Take Reading")
 constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 
