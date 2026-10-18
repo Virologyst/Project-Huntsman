@@ -27,13 +27,16 @@ Knee "toward the body" is the knee-DOWN direction in the dir convention (verifie
 
 Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 ms each).
 
-## Squat - `squat [s]`
+## Squat - `squat [s] [depth]`
 
-From the stand pose only: all Y up by `SQUAT_DROP_US` = 200 from the stand push (to +100 - lowers the body,
-`STAND_PUSH_MS` = 750 ms, feet stay put; was 100 = Y to centre until 2026-10-18), hold `s` seconds (default
-`SQUAT_HOLD_MS` = 3 s; prints `Squatting.`), then Y back to `STAND_PUSH_US` (prints `Standing.`). Ends in the exact stand pose, so walking works straight after. Any key
-aborts and holds low. Used by the payload's "Take Reading" button (probe under the body) - added 2026-10-18;
-ran correctly on the stand 2026-10-18 (lower - hold - stand). Not yet tried on the floor.
+From the stand pose only: all Y up by `depth` us from the stand push (default `SQUAT_DROP_US` = 300, i.e. Y
+-100 -> +200; clamped to `SQUAT_DROP_MAX_US` = 500) - lowers the body, `STAND_PUSH_MS` = 750 ms, feet stay
+put. Holds `s` seconds (default `SQUAT_HOLD_MS` = 3 s; prints `Squatting.`), then Y back to `STAND_PUSH_US`
+(prints `Standing.`). Ends in the exact stand pose, so walking works straight after. Any key aborts and holds
+low. The payload's "Take Reading" button uses the defaults; try depths live with e.g. `squat 3 400`.
+
+History (2026-10-18): depth 100 (Y to centre) ran correctly on the stand but was too shallow; 200, then 300
+for "a proper squat" - 300 not yet run on the robot.
 
 ## Walk - `walk`, `back`, `turn left|right`
 

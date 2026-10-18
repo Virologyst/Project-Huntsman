@@ -31,7 +31,7 @@ bool standUp(bool stepMode);
 
 // Lower the body and return every joint to neutral
 bool sitDown();
-bool squat(uint32_t holdMs);  // from the stand pose: lower the body (Y to centre), hold, stand back up
+bool squat(uint32_t holdMs, int dropUs);  // from the stand pose: lower the body (Y up by dropUs), hold, stand back up
 
 // True when Y and K are at the stand pose (X may be anywhere)
 bool isStanding();

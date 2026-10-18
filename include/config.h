@@ -45,7 +45,8 @@ constexpr int STAND_PUSH_US = -100;   // Y down: feet push the body off the grou
 constexpr uint16_t STAND_RAMP_MS = 500;   // centre, lift and tuck ramps
 constexpr uint16_t STAND_PUSH_MS = 750;   // the loaded push, slower
 constexpr uint32_t SQUAT_HOLD_MS = 3000;  // 'squat': time held low (payload "Take Reading")
-constexpr int SQUAT_DROP_US = 200;        // 'squat': Y up from the stand push (lowers the body; was 100 = Y to centre)
+constexpr int SQUAT_DROP_US = 300;        // 'squat': Y up from the stand push (lowers the body; 100 -> 200 -> 300, user wants a proper squat)
+constexpr int SQUAT_DROP_MAX_US = 500;    // 'squat <s> <depth>' is clamped to this
 constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 

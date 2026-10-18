@@ -629,7 +629,9 @@ void handle(char *cmdLine) {
     else if (eq(c, "wiggle")) cmdWiggle(tok, n);
     else if (eq(c, "stand")) motion::standUp(n > 1 && eq(tok[1], "step"));
     else if (eq(c, "sit")) motion::sitDown();
-    else if (eq(c, "squat")) motion::squat(n > 1 ? (uint32_t)(max(0.0, atof(tok[1])) * 1000) : cfg::SQUAT_HOLD_MS);
+    else if (eq(c, "squat"))
+        motion::squat(n > 1 ? (uint32_t)(max(0.0, atof(tok[1])) * 1000) : cfg::SQUAT_HOLD_MS,
+                      n > 2 ? constrain(atoi(tok[2]), 0, cfg::SQUAT_DROP_MAX_US) : cfg::SQUAT_DROP_US);
     else if (eq(c, "wifi")) {
         if (n < 2) {
             net::printNetworks();
@@ -677,7 +679,7 @@ void printHelp() {
         "\nMotion (any key aborts and holds):\n"
         "  stand | stand step     centre -> Y up -> K tuck -> Y down (step = Enter before each step)\n"
         "  sit                    lower the body, everything back to centre\n"
-        "  squat [s]              from the stand pose: lower the body, hold s seconds (default 3), stand\n"
+        "  squat [s] [depth]      from the stand pose: lower the body depth us (default 300), hold s (3), stand\n"
         "  wifi [n]               list known networks / switch to network n (e.g. the payload hotspot)\n"
         "  walk [n] | back [n] | turn left|right [n]   tetrapod gait from the stand pose;\n"
         "                         n cycles or until a key (finishes the step, ends standing)\n"
