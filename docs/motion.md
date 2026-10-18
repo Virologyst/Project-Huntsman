@@ -14,8 +14,8 @@ Also a power-harness test: each step moves one joint type on all 8 legs at once.
 | Step | Joints | Target (offset from neutral) | Ramp |
 |---|---|---|---|
 | 1 | all 24 | neutral | 500 ms |
-| 2 | 8x Y (lift) | `STAND_LIFT_US` = +200 (up) | 500 ms |
-| 3 | 8x K (knee) | `STAND_TUCK_US` = -300 (toward body; + moves them outward) | 500 ms |
+| 2 | 8x Y (lift) | `STAND_LIFT_US` = +250 (up; was +200 until 2026-10-18) | 500 ms |
+| 3 | 8x K (knee) | `STAND_TUCK_US` = -375 (toward body; + moves them outward; was -300 until 2026-10-18) | 500 ms |
 | 4 | 8x Y (lift) | `STAND_PUSH_US` = -100 (down - lifts the body) | 750 ms |
 
 500 ms pause between steps. `stand step` waits for Enter before each step (`q` stops) - use it for the
@@ -29,9 +29,9 @@ Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 m
 
 ## Squat - `squat [s]`
 
-From the stand pose only: all Y to centre (lowers the body, `STAND_PUSH_MS` = 750 ms - the first step of
-`sit`, feet stay put), hold `s` seconds (default `SQUAT_HOLD_MS` = 3 s; prints `Squatting.`), then Y back to
-`STAND_PUSH_US` (prints `Standing.`). Ends in the exact stand pose, so walking works straight after. Any key
+From the stand pose only: all Y up by `SQUAT_DROP_US` = 200 from the stand push (to +100 - lowers the body,
+`STAND_PUSH_MS` = 750 ms, feet stay put; was 100 = Y to centre until 2026-10-18), hold `s` seconds (default
+`SQUAT_HOLD_MS` = 3 s; prints `Squatting.`), then Y back to `STAND_PUSH_US` (prints `Standing.`). Ends in the exact stand pose, so walking works straight after. Any key
 aborts and holds low. Used by the payload's "Take Reading" button (probe under the body) - added 2026-10-18;
 ran correctly on the stand 2026-10-18 (lower - hold - stand). Not yet tried on the floor.
 
@@ -44,7 +44,7 @@ Joint-space **alternating tetrapod** (no inverse kinematics yet):
 - **Walk pose.** A walk starts from the stand pose and moves each group (lift, place, lower - feet never
   drag) into a wider, lower walk pose; when it stops it returns the same way to the stand pose. Stand and
   sit are unchanged.
-  - Middle legs (FML FMR BML BMR): knee out to `WALK_MID_KNEE_US` = -50 (stand is -300; was -100), feet reach
+  - Middle legs (FML FMR BML BMR): knee out to `WALK_MID_KNEE_US` = -50 (stand is -375; was -100), feet reach
     out so each swing covers more ground.
   - Front legs (FL FR): X base `WALK_FRONT_SPREAD_US` = 400 (~54 deg) toward the head, so the front feet
     come together ahead of the body before the first step and pull. Back legs (BL BR): X base

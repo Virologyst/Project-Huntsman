@@ -39,12 +39,13 @@ constexpr uint16_t BOOT_PACE_MS = 20;
 // Offsets are from each joint's neutral (servo_map, 'setneutral') and follow its dir:
 // + = lift up, knee up, swing forward.
 // Sequence: all joints centre -> all Y up -> all K tucked -> all Y down (lifts the body).
-constexpr int STAND_LIFT_US = 200;    // Y up before tucking knees (doubled from 100)
-constexpr int STAND_TUCK_US = -300;   // K toward the body (verified: + moves the knees outward)
+constexpr int STAND_LIFT_US = 250;    // Y up before tucking knees (100 -> 200 -> 250, 2026-10-18: legs lift higher)
+constexpr int STAND_TUCK_US = -375;   // K toward the body (verified: + moves the knees outward; -300 -> -375 2026-10-18)
 constexpr int STAND_PUSH_US = -100;   // Y down: feet push the body off the ground
 constexpr uint16_t STAND_RAMP_MS = 500;   // centre, lift and tuck ramps
 constexpr uint16_t STAND_PUSH_MS = 750;   // the loaded push, slower
 constexpr uint32_t SQUAT_HOLD_MS = 3000;  // 'squat': time held low (payload "Take Reading")
+constexpr int SQUAT_DROP_US = 200;        // 'squat': Y up from the stand push (lowers the body; was 100 = Y to centre)
 constexpr uint16_t STAND_PAUSE_MS = 500;  // between steps
 constexpr uint16_t FRAME_MS = 20;         // ramp update interval (one servo frame)
 

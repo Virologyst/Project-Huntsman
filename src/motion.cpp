@@ -815,7 +815,7 @@ bool sitDown() {
            step(false, "X to centre", 'X', 0, cfg::STAND_RAMP_MS) && (Term.println("Sitting."), true);
 }
 
-// Lower the body without moving the feet: Y to centre (the first step of 'sit'), hold, then back to the stand
+// Lower the body without moving the feet: Y up by SQUAT_DROP_US from the stand push, hold, then back to the stand
 // push. Payload "Take Reading" (probe under the body). Returns to the exact stand pose, so walking still works.
 bool squat(uint32_t holdMs) {
     if (!isStanding()) {
@@ -824,7 +824,8 @@ bool squat(uint32_t holdMs) {
     }
     diag::stage("squat");
     Term.println("Squat (any key aborts and holds).");
-    if (!step(false, "all Y to centre - lowering the body", 'Y', 0, cfg::STAND_PUSH_MS)) return false;
+    if (!step(false, "all Y up - lowering the body", 'Y', cfg::STAND_PUSH_US + cfg::SQUAT_DROP_US, cfg::STAND_PUSH_MS))
+        return false;
     Term.println("Squatting.");
     for (uint32_t t0 = millis(); millis() - t0 < holdMs;) {
         if (aborted()) {
