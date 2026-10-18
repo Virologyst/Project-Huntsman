@@ -52,7 +52,7 @@ Full wiring and channel map: [docs/hardware.md](docs/hardware.md).
 own 5 V / 5 A buck from the 18 V battery, not from the ESP32. It talks to the robot over the Wi-Fi console
 (huntsman.local:23), so changes to console commands, the one-client rule or abort-on-any-key affect it.
 The payload's dashboard drives the robot (hold-to-move, dead-man stop) and uses `squat` ("Take Reading") and
-`wifi <n>` (router / hotspot button) - both added 2026-10-18 for it, untested on the robot. The Pi's hotspot
+`wifi <n>` (router / hotspot button) - both added 2026-10-18 for it. squat ran correctly on the stand; wifi switching not yet tested. The Pi's hotspot
 is `Huntsman PL01` (network 2 in secrets.h).
 It is expected to **command the robot in future** (user, 2026-10-04) - likely needs a structured protocol
 and a way to share the console with the PlatformIO monitor (e.g. a second port).

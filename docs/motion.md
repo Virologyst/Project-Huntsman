@@ -32,8 +32,8 @@ Y to centre (lowers the body, 750 ms), then K to centre, then X to centre (500 m
 From the stand pose only: all Y to centre (lowers the body, `STAND_PUSH_MS` = 750 ms - the first step of
 `sit`, feet stay put), hold `s` seconds (default `SQUAT_HOLD_MS` = 3 s; prints `Squatting.`), then Y back to
 `STAND_PUSH_US` (prints `Standing.`). Ends in the exact stand pose, so walking works straight after. Any key
-aborts and holds low. Used by the payload's "Take Reading" button (probe under the body) - added 2026-10-18,
-**untested on the robot**.
+aborts and holds low. Used by the payload's "Take Reading" button (probe under the body) - added 2026-10-18;
+ran correctly on the stand 2026-10-18 (lower - hold - stand). Not yet tried on the floor.
 
 ## Walk - `walk`, `back`, `turn left|right`
 
